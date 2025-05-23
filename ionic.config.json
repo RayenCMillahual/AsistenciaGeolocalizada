@@ -1,0 +1,7 @@
+{
+  "name": "control-asistencia",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
