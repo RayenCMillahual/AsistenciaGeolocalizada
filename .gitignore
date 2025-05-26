@@ -68,3 +68,21 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local       
+
+# firebase
+/firebase-debug.log
+/firebase.json
+/firebase.rules
+/firebase.firestore.indexes.json
+/firebase.storage.rules
+# Capacitor
+/capacitor.config.json
+/capacitor.config.ts    
+src/app/services/firebase-config.ts

@@ -5,17 +5,15 @@ import { HeaderComponent } from './header/header.component';
 import { LoadingComponent } from './loading/loading.component';
 
 @NgModule({
-  declarations: [
-    HeaderComponent,
-    LoadingComponent
-  ],
   imports: [
     CommonModule,
-    IonicModule
+    IonicModule,
+    HeaderComponent,
+    LoadingComponent
   ],
   exports: [
     HeaderComponent,
     LoadingComponent
   ]
 })
-export class SharedModule { }
+export class SharedModule {}

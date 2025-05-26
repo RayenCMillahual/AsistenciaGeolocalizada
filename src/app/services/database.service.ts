@@ -1,5 +1,24 @@
 import { Injectable } from '@angular/core';
-import { Storage } from '@ionic/storage-angular';
+import { 
+  Firestore, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy,
+  collectionData,
+  doc,
+  setDoc,
+  Timestamp
+} from '@angular/fire/firestore';
+import { 
+  Auth, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  signOut,
+  User as FirebaseUser
+} from '@angular/fire/auth';
 import { User } from '../models/user.model';
 import { Attendance } from '../models/attendance.model';
 import { ValidLocation } from '../models/location.model';
@@ -9,140 +28,292 @@ import { BehaviorSubject, Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class DatabaseService {
-  private _storage: Storage | null = null;
   private _locations = new BehaviorSubject<ValidLocation[]>([]);
+  private currentUser: FirebaseUser | null = null;
   
-  constructor(private storage: Storage) {
+  constructor(
+    private firestore: Firestore,
+    private auth: Auth
+  ) {
     this.init();
   }
 
   async init() {
-    const storage = await this.storage.create();
-    this._storage = storage;
     await this.loadLocations();
     await this.seedDefaultLocation();
+    
+    // Escuchar cambios de autenticación
+    this.auth.onAuthStateChanged(user => {
+      this.currentUser = user;
+    });
   }
 
-  // Método para precargar una ubicación de trabajo predeterminada
+  // =====================
+  // GESTIÓN DE UBICACIONES
+  // =====================
+  
   private async seedDefaultLocation() {
     const locations = await this.getLocations();
     if (locations.length === 0) {
       const defaultLocation: ValidLocation = {
         id: '1',
         nombre: 'Oficina Principal',
-        latitud: -34.603722, // Ejemplo: Buenos Aires
+        latitud: -34.603722,
         longitud: -58.381592,
-        radioPermitido: 100 // 100 metros
+        radioPermitido: 100
       };
       await this.addLocation(defaultLocation);
     }
   }
 
-  // Obtiene todas las ubicaciones válidas
   async loadLocations() {
-    const locations = await this._storage?.get('locations') || [];
-    this._locations.next(locations);
-    return locations;
+    try {
+      const locationsRef = collection(this.firestore, 'locations');
+      const snapshot = await getDocs(locationsRef);
+      const locations = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as ValidLocation));
+      
+      this._locations.next(locations);
+      return locations;
+    } catch (error) {
+      console.error('Error loading locations:', error);
+      return [];
+    }
   }
 
-  // Devuelve un Observable de las ubicaciones
   getLocationsAsObservable(): Observable<ValidLocation[]> {
     return this._locations.asObservable();
   }
 
-  // Obtiene todas las ubicaciones válidas
   async getLocations(): Promise<ValidLocation[]> {
-    return await this._storage?.get('locations') || [];
+    return this.loadLocations();
   }
 
-  // Agrega una nueva ubicación válida
   async addLocation(location: ValidLocation): Promise<void> {
-    const locations = await this.getLocations();
-    if (!location.id) {
-      location.id = Date.now().toString();
+    try {
+      const locationsRef = collection(this.firestore, 'locations');
+      
+      if (location.id) {
+        // Si tiene ID, usar setDoc
+        await setDoc(doc(this.firestore, 'locations', location.id), location);
+      } else {
+        // Si no tiene ID, usar addDoc (genera ID automático)
+        await addDoc(locationsRef, location);
+      }
+      
+      await this.loadLocations(); // Recargar ubicaciones
+    } catch (error) {
+      console.error('Error adding location:', error);
+      throw error;
     }
-    locations.push(location);
-    await this._storage?.set('locations', locations);
-    this._locations.next(locations);
   }
 
-  // Registra un nuevo usuario
-  async registerUser(user: User): Promise<User> {
-    const users = await this.getUsers();
-    
-    // Verificar si el email ya existe
-    const existingUser = users.find(u => u.email === user.email);
-    if (existingUser) {
-      throw new Error('El email ya está registrado');
+  // =====================
+  // GESTIÓN DE USUARIOS
+  // =====================
+
+  async registerUser(userData: User): Promise<User> {
+    try {
+      // Crear usuario en Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        this.auth, 
+        userData.email, 
+        userData.password || ''
+      );
+      
+      // Guardar datos adicionales en Firestore
+      const userDoc = {
+        email: userData.email,
+        nombre: userData.nombre,
+        apellido: userData.apellido,
+        telefono: userData.telefono,
+        fechaCreacion: Timestamp.now(),
+        uid: userCredential.user.uid
+      };
+      
+      await setDoc(
+        doc(this.firestore, 'users', userCredential.user.uid), 
+        userDoc
+      );
+      
+      return {
+        id: userCredential.user.uid,
+        ...userDoc,
+        fechaCreacion: new Date()
+      } as User;
+      
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        throw new Error('El email ya está registrado');
+      }
+      throw new Error('Error al registrar usuario: ' + error.message);
     }
-    
-    // Generar ID y fecha de creación
-    user.id = Date.now().toString();
-    user.fechaCreacion = new Date();
-    
-    users.push(user);
-    await this._storage?.set('users', users);
-    
-    // Devolvemos el usuario sin la contraseña para mayor seguridad
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword as User;
   }
 
-  // Obtiene todos los usuarios
-  async getUsers(): Promise<User[]> {
-    return await this._storage?.get('users') || [];
-  }
-
-  // Autentica un usuario
   async loginUser(email: string, password: string): Promise<User> {
-    const users = await this.getUsers();
-    const user = users.find(u => u.email === email && u.password === password);
-    
-    if (!user) {
-      throw new Error('Email o contraseña incorrectos');
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        this.auth, 
+        email, 
+        password
+      );
+      
+      // Obtener datos adicionales del usuario desde Firestore
+      const userDocRef = doc(this.firestore, 'users', userCredential.user.uid);
+      const userDoc = await getDocs(query(collection(this.firestore, 'users'), where('uid', '==', userCredential.user.uid)));
+      
+      if (!userDoc.empty) {
+        const userData = userDoc.docs[0].data();
+        return {
+          id: userCredential.user.uid,
+          ...userData,
+          fechaCreacion: userData['fechaCreacion'].toDate()
+        } as User;
+      }
+      
+      throw new Error('Datos de usuario no encontrados');
+      
+    } catch (error: any) {
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        throw new Error('Email o contraseña incorrectos');
+      }
+      throw new Error('Error al iniciar sesión: ' + error.message);
+    }
+  }
+
+  async logoutUser(): Promise<void> {
+    try {
+      await signOut(this.auth);
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      throw error;
+    }
+  }
+
+  getCurrentUser(): FirebaseUser | null {
+    return this.currentUser;
+  }
+
+  // =====================
+  // GESTIÓN DE ASISTENCIAS
+  // =====================
+
+  async saveAttendance(attendance: Attendance): Promise<Attendance> {
+    try {
+      const attendanceData = {
+        ...attendance,
+        fecha: Timestamp.fromDate(new Date(attendance.fecha)),
+        userId: this.currentUser?.uid || attendance.userId
+      };
+      
+      const attendancesRef = collection(this.firestore, 'attendances');
+      const docRef = await addDoc(attendancesRef, attendanceData);
+      
+      return {
+        ...attendance,
+        id: docRef.id
+      };
+      
+    } catch (error) {
+      console.error('Error saving attendance:', error);
+      throw error;
+    }
+  }
+
+  async getAttendances(): Promise<Attendance[]> {
+    try {
+      const attendancesRef = collection(this.firestore, 'attendances');
+      const q = query(attendancesRef, orderBy('fecha', 'desc'));
+      const snapshot = await getDocs(q);
+      
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        fecha: doc.data()['fecha'].toDate()
+      } as Attendance));
+      
+    } catch (error) {
+      console.error('Error getting attendances:', error);
+      return [];
+    }
+  }
+
+  async getUserAttendances(userId?: string): Promise<Attendance[]> {
+    try {
+      const targetUserId = userId || this.currentUser?.uid;
+      if (!targetUserId) {
+        throw new Error('No hay usuario autenticado');
+      }
+      
+      const attendancesRef = collection(this.firestore, 'attendances');
+      const q = query(
+        attendancesRef, 
+        where('userId', '==', targetUserId),
+        orderBy('fecha', 'desc')
+      );
+      
+      const snapshot = await getDocs(q);
+      
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        fecha: doc.data()['fecha'].toDate()
+      } as Attendance));
+      
+    } catch (error) {
+      console.error('Error getting user attendances:', error);
+      return [];
+    }
+  }
+
+  async hasUserRegisteredToday(userId: string, tipo: 'entrada' | 'salida'): Promise<boolean> {
+    try {
+      const targetUserId = userId || this.currentUser?.uid;
+      if (!targetUserId) return false;
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const attendancesRef = collection(this.firestore, 'attendances');
+      const q = query(
+        attendancesRef,
+        where('userId', '==', targetUserId),
+        where('tipo', '==', tipo),
+        where('fecha', '>=', Timestamp.fromDate(today)),
+        where('fecha', '<', Timestamp.fromDate(tomorrow))
+      );
+      
+      const snapshot = await getDocs(q);
+      return !snapshot.empty;
+      
+    } catch (error) {
+      console.error('Error checking today registration:', error);
+      return false;
+    }
+  }
+
+  // =====================
+  // OBSERVABLES EN TIEMPO REAL
+  // =====================
+  
+  getUserAttendancesObservable(userId?: string): Observable<Attendance[]> {
+    const targetUserId = userId || this.currentUser?.uid;
+    if (!targetUserId) {
+      return new Observable(observer => observer.next([]));
     }
     
-    // Devolvemos el usuario sin la contraseña para mayor seguridad
-    const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword as User;
-  }
-
-  // Registra una nueva asistencia
-  async saveAttendance(attendance: Attendance): Promise<Attendance> {
-    const attendances = await this.getAttendances();
+    const attendancesRef = collection(this.firestore, 'attendances');
+    const q = query(
+      attendancesRef,
+      where('userId', '==', targetUserId),
+      orderBy('fecha', 'desc')
+    );
     
-    // Generar ID
-    attendance.id = Date.now().toString();
-    
-    attendances.push(attendance);
-    await this._storage?.set('attendances', attendances);
-    
-    return attendance;
-  }
-
-  // Obtiene todas las asistencias
-  async getAttendances(): Promise<Attendance[]> {
-    return await this._storage?.get('attendances') || [];
-  }
-
-  // Obtiene todas las asistencias de un usuario
-  async getUserAttendances(userId: string): Promise<Attendance[]> {
-    const attendances = await this.getAttendances();
-    return attendances.filter(a => a.userId === userId);
-  }
-
-  // Verifica si el usuario ya registró entrada/salida hoy
-  async hasUserRegisteredToday(userId: string, tipo: 'entrada' | 'salida'): Promise<boolean> {
-    const attendances = await this.getUserAttendances(userId);
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    return attendances.some(a => {
-      const attendanceDate = new Date(a.fecha);
-      attendanceDate.setHours(0, 0, 0, 0);
-      return a.tipo === tipo && 
-             attendanceDate.getTime() === today.getTime();
-    });
+    return collectionData(q, { idField: 'id' }) as Observable<Attendance[]>;
   }
 }

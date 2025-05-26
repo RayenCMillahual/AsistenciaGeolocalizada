@@ -1,0 +1,48 @@
+// header.component.scss
+ion-header {
+    ion-toolbar {
+      --background: #3880ff;
+      --color: white;
+      
+      ion-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+      
+      ion-button {
+        --color: white;
+        --background: transparent;
+        
+        &:hover {
+          --background: rgba(255, 255, 255, 0.1);
+        }
+      }
+      
+      ion-icon {
+        font-size: 1.5rem;
+      }
+    }
+  }
+  
+  .header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .logout-button {
+    --color: #ff4757;
+    font-weight: 500;
+    
+    &:hover {
+      --background: rgba(255, 71, 87, 0.1);
+    }
+  }
+  
+  .back-button {
+    margin-right: 8px;
+  }
+  
+  .menu-button {
+    margin-left: 8px;
+  }
