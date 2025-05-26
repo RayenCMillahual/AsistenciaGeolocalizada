@@ -1,0 +1,19 @@
+<ion-toolbar color="primary">
+    <ion-buttons slot="start" *ngIf="showBackButton">
+      <ion-back-button (click)="goBack()"></ion-back-button>
+    </ion-buttons>
+    
+    <ion-buttons slot="start" *ngIf="showMenuButton && !showBackButton">
+      <ion-button (click)="onMenuClick()">
+        <ion-icon slot="icon-only" name="menu-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    
+    <ion-title>{{ title }}</ion-title>
+    
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>

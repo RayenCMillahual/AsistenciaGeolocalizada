@@ -1,0 +1,20 @@
+ion-app {
+    font-family: 'Roboto', sans-serif;
+  }
+  
+  /* Variables globales */
+  :root {
+    --primary-color: #3880ff;
+    --secondary-color: #0cd1e8;
+    --success-color: #10dc60;
+    --warning-color: #ffce00;
+    --danger-color: #f04141;
+    --dark-color: #222428;
+    --medium-color: #92949c;
+    --light-color: #f4f5f8;
+    
+    --border-radius: 12px;
+    --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+  }
+  

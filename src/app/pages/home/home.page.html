@@ -1,0 +1,104 @@
+<ion-header [translucent]="true">
+  <app-header 
+    [title]="'Inicio'" 
+    [showBackButton]="false"
+    (menuClick)="openMenu()">
+  </app-header>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="home-content">
+  <div class="home-container">
+    <!-- Header de bienvenida -->
+    <div class="welcome-section">
+      <div class="user-info">
+        <ion-avatar>
+          <img src="assets/images/default-avatar.png" alt="Avatar">
+        </ion-avatar>
+        <div class="user-details">
+          <h2>{{ getGreeting() }}</h2>
+          <p *ngIf="currentUser">{{ currentUser.firstName }} {{ currentUser.lastName }}</p>
+          <span class="employee-id" *ngIf="currentUser">ID: {{ currentUser.employeeId }}</span>
+        </div>
+      </div>
+      
+      <!-- Reloj -->
+      <div class="clock-section">
+        <div class="current-time">
+          <h1>{{ currentTime | date:'HH:mm:ss' }}</h1>
+          <p>{{ currentTime | date:'EEEE, d MMM y' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado de asistencia del día -->
+    <div class="attendance-status" *ngIf="todayAttendance">
+      <ion-card class="status-card">
+        <ion-card-header>
+          <ion-card-title>Estado de Hoy</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="status-grid">
+            <div class="status-item">
+              <ion-icon name="log-in-outline" color="success"></ion-icon>
+              <div>
+                <span class="label">Entrada</span>
+                <span class="time">{{ todayAttendance.checkIn | timeFormat }}</span>
+              </div>
+            </div>
+            <div class="status-item" *ngIf="todayAttendance.checkOut">
+              <ion-icon name="log-out-outline" color="danger"></ion-icon>
+              <div>
+                <span class="label">Salida</span>
+                <span class="time">{{ todayAttendance.checkOut | timeFormat }}</span>
+              </div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="action-buttons">
+      <ion-button 
+        expand="block" 
+        color="success" 
+        size="large"
+        (click)="showConfirmation('check-in')"
+        [disabled]="!canCheckIn()"
+        class="action-button check-in">
+        <ion-icon name="log-in-outline" slot="start"></ion-icon>
+        Registrar Entrada
+      </ion-button>
+
+      <ion-button 
+        expand="block" 
+        color="danger" 
+        size="large"
+        (click)="showConfirmation('check-out')"
+        [disabled]="!canCheckOut()"
+        class="action-button check-out">
+        <ion-icon name="log-out-outline" slot="start"></ion-icon>
+        Registrar Salida
+      </ion-button>
+    </div>
+
+    <!-- Navegación rápida -->
+    <div class="quick-nav">
+      <ion-card class="nav-card" (click)="goToHistory()">
+        <ion-card-content>
+          <ion-icon name="calendar-outline" color="primary"></ion-icon>
+          <h3>Historial</h3>
+          <p>Ver asistencias anteriores</p>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card class="nav-card" (click)="goToAttendance()">
+        <ion-card-content>
+          <ion-icon name="analytics-outline" color="secondary"></ion-icon>
+          <h3>Reportes</h3>
+          <p>Estadísticas y reportes</p>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+</ion-content>

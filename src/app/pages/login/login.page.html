@@ -1,0 +1,70 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-title>Iniciar Sesión</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="login-content">
+  <div class="login-container">
+    <div class="logo-container">
+      <ion-icon name="business-outline" class="logo-icon"></ion-icon>
+      <h1>Sistema de Asistencia</h1>
+      <p>Bienvenido de vuelta</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <ion-item fill="outline" class="form-item">
+        <ion-label position="floating">Correo Electrónico</ion-label>
+        <ion-input 
+          type="email" 
+          formControlName="email"
+          autocomplete="email"
+          appAutoFocus>
+        </ion-input>
+        <ion-icon name="mail-outline" slot="start"></ion-icon>
+      </ion-item>
+      <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+        <span *ngIf="loginForm.get('email')?.errors?.['required']">El correo es requerido</span>
+        <span *ngIf="loginForm.get('email')?.errors?.['email']">Ingresa un correo válido</span>
+      </div>
+
+      <ion-item fill="outline" class="form-item">
+        <ion-label position="floating">Contraseña</ion-label>
+        <ion-input 
+          [type]="showPassword ? 'text' : 'password'" 
+          formControlName="password"
+          autocomplete="current-password">
+        </ion-input>
+        <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
+        <ion-button 
+          fill="clear" 
+          slot="end" 
+          (click)="togglePassword()"
+          type="button">
+          <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <div class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+        <span *ngIf="loginForm.get('password')?.errors?.['required']">La contraseña es requerida</span>
+        <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Mínimo 6 caracteres</span>
+      </div>
+
+      <ion-button 
+        expand="block" 
+        type="submit" 
+        [disabled]="!loginForm.valid"
+        class="login-button">
+        Iniciar Sesión
+        <ion-icon name="log-in-outline" slot="end"></ion-icon>
+      </ion-button>
+    </form>
+
+    <div class="register-link">
+      <p>¿No tienes cuenta? 
+        <ion-button fill="clear" (click)="goToRegister()">
+          Regístrate aquí
+        </ion-button>
+      </p>
+    </div>
+  </div>
+</ion-content>

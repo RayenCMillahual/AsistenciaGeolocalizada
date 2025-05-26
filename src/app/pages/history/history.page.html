@@ -1,0 +1,78 @@
+<ion-header [translucent]="true">
+  <app-header 
+    [title]="'Historial'" 
+    [showBackButton]="true">
+  </app-header>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="history-content">
+  <div class="history-container">
+    <!-- Segmentos de filtro -->
+    <ion-segment 
+      value="week" 
+      (ionChange)="onSegmentChange($event)"
+      class="filter-segment">
+      <ion-segment-button value="week">
+        <ion-label>Semana</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="month">
+        <ion-label>Mes</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="year">
+        <ion-label>Año</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Refresher -->
+    <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+      <ion-refresher-content></ion-refresher-content>
+    </ion-refresher>
+
+    <!-- Lista de asistencias -->
+    <div class="attendance-list" *ngIf="attendanceHistory.length > 0; else noData">
+      <ion-card 
+        *ngFor="let attendance of attendanceHistory" 
+        class="attendance-card"
+        (click)="showAttendanceDetails(attendance)">
+        <ion-card-content>
+          <div class="card-header">
+            <div class="date-info">
+              <h3>{{ attendance.date | dateFormat }}</h3>
+              <span class="status" [class]="attendance.status">
+                {{ attendance.status | titlecase }}
+              </span>
+            </div>
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </div>
+          
+          <div class="time-info">
+            <div class="time-item" *ngIf="attendance.checkIn">
+              <ion-icon name="log-in-outline" color="success"></ion-icon>
+              <span>{{ attendance.checkIn | timeFormat }}</span>
+            </div>
+            <div class="time-item" *ngIf="attendance.checkOut">
+              <ion-icon name="log-out-outline" color="danger"></ion-icon>
+              <span>{{ attendance.checkOut | timeFormat }}</span>
+            </div>
+          </div>
+          
+          <div class="working-hours">
+            <ion-chip color="primary">
+              <ion-icon name="time-outline"></ion-icon>
+              <ion-label>{{ getWorkingHours(attendance) }}</ion-label>
+            </ion-chip>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Estado vacío -->
+    <ng-template #noData>
+      <div class="empty-state">
+        <ion-icon name="calendar-outline" class="empty-icon"></ion-icon>
+        <h2>No hay registros</h2>
+        <p>No se encontraron registros de asistencia para el período seleccionado.</p>
+      </div>
+    </ng-template>
+  </div>
+</ion-content>
