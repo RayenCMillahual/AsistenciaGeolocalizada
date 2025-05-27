@@ -1,19 +1,21 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-import { HeaderComponent } from './header/header.component';
-import { LoadingComponent } from './loading/loading.component';
+import { DateFormatPipe } from '../pipes/date-format.pipe';
+import { TimeFormatPipe } from '../pipes/time-format.pipe';
 
 @NgModule({
-  imports: [
+  imports: [  // Move pipes to imports instead of declarations
     CommonModule,
     IonicModule,
-    HeaderComponent,
-    LoadingComponent
+    DateFormatPipe,
+    TimeFormatPipe
   ],
   exports: [
-    HeaderComponent,
-    LoadingComponent
+    DateFormatPipe,
+    TimeFormatPipe,
+    CommonModule,
+    IonicModule
   ]
 })
-export class SharedModule {}
+export class SharedModule { }

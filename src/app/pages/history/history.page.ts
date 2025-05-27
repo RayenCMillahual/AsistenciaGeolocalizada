@@ -1,14 +1,18 @@
 import { Component, OnInit } from '@angular/core';
-import { LoadingController, AlertController } from '@ionic/angular';
+import { CommonModule } from '@angular/common';
+import { IonicModule, LoadingController, AlertController } from '@ionic/angular';
 import { AttendanceService } from '../../services/attendance.service';
 import { AuthService } from '../../services/auth.service';
 import { Attendance } from '../../models/attendance.model';
 import { User } from '../../models/user.model';
+import { SharedModule } from '../../shared/shared.module';
 
 @Component({
   selector: 'app-history',
   templateUrl: './history.page.html',
   styleUrls: ['./history.page.scss'],
+  standalone: true,
+  imports: [CommonModule, IonicModule, SharedModule]
 })
 export class HistoryPage implements OnInit {
   attendanceHistory: Attendance[] = [];
@@ -130,22 +134,15 @@ export class HistoryPage implements OnInit {
     return grouped;
   }
 
-  async showAttendanceDetails(entrada?: Attendance, salida?: Attendance) {
-    if (!entrada && !salida) return;
-
-    const date = entrada ? entrada.fecha : salida!.fecha;
-    const entradaTime = entrada ? entrada.hora : 'N/A';
-    const salidaTime = salida ? salida.hora : 'N/A';
-    const workingHours = entrada && salida ? this.getWorkingHours(entrada, salida) : 'Incompleto';
+  async showAttendanceDetails(attendance: Attendance) {
+    if (!attendance) return;
 
     const alert = await this.alertController.create({
       header: 'Detalles de Asistencia',
       message: `
-        <p><strong>Fecha:</strong> ${new Date(date).toLocaleDateString()}</p>
-        <p><strong>Entrada:</strong> ${entradaTime}</p>
-        <p><strong>Salida:</strong> ${salidaTime}</p>
-        <p><strong>Horas trabajadas:</strong> ${workingHours}</p>
-        <p><strong>Estado:</strong> ${entrada && salida ? 'Completo' : 'Incompleto'}</p>
+        <p><strong>Fecha:</strong> ${new Date(attendance.fecha).toLocaleDateString()}</p>
+        <p><strong>Tipo:</strong> ${attendance.tipo}</p>
+        <p><strong>Hora:</strong> ${attendance.hora}</p>
       `,
       buttons: ['OK']
     });

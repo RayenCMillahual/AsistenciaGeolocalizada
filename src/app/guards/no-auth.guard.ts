@@ -12,8 +12,8 @@ export class NoAuthGuard implements CanActivate {
     private router: Router
   ) {}
 
-  async canActivate(): Promise<boolean> {
-    const isAuthenticated = await this.authService.isAuthenticated();
+  canActivate(): boolean {
+    const isAuthenticated = this.authService.isAuthenticated();
     
     if (isAuthenticated) {
       this.router.navigate(['/home']);

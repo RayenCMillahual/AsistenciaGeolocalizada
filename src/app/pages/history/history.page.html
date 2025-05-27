@@ -1,8 +1,10 @@
 <ion-header [translucent]="true">
-  <app-header 
-    [title]="'Historial'" 
-    [showBackButton]="true">
-  </app-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Historial</ion-title>
+  </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="history-content">
@@ -37,30 +39,20 @@
         <ion-card-content>
           <div class="card-header">
             <div class="date-info">
-              <h3>{{ attendance.date | dateFormat }}</h3>
-              <span class="status" [class]="attendance.status">
-                {{ attendance.status | titlecase }}
+              <h3>{{ attendance.fecha | dateFormat }}</h3>
+              <span class="status" [class]="attendance.tipo">
+                {{ attendance.tipo | titlecase }}
               </span>
             </div>
             <ion-icon name="chevron-forward-outline"></ion-icon>
           </div>
           
           <div class="time-info">
-            <div class="time-item" *ngIf="attendance.checkIn">
-              <ion-icon name="log-in-outline" color="success"></ion-icon>
-              <span>{{ attendance.checkIn | timeFormat }}</span>
+            <div class="time-item">
+              <ion-icon [name]="attendance.tipo === 'entrada' ? 'log-in-outline' : 'log-out-outline'" 
+                        [color]="attendance.tipo === 'entrada' ? 'success' : 'danger'"></ion-icon>
+              <span>{{ attendance.hora | timeFormat }}</span>
             </div>
-            <div class="time-item" *ngIf="attendance.checkOut">
-              <ion-icon name="log-out-outline" color="danger"></ion-icon>
-              <span>{{ attendance.checkOut | timeFormat }}</span>
-            </div>
-          </div>
-          
-          <div class="working-hours">
-            <ion-chip color="primary">
-              <ion-icon name="time-outline"></ion-icon>
-              <ion-label>{{ getWorkingHours(attendance) }}</ion-label>
-            </ion-chip>
           </div>
         </ion-card-content>
       </ion-card>

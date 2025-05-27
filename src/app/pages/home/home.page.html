@@ -1,9 +1,12 @@
 <ion-header [translucent]="true">
-  <app-header 
-    [title]="'Inicio'" 
-    [showBackButton]="false"
-    (menuClick)="openMenu()">
-  </app-header>
+  <ion-toolbar color="primary">
+    <ion-title>Inicio</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="openMenu()">
+        <ion-icon name="menu-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="home-content">
@@ -16,7 +19,7 @@
         </ion-avatar>
         <div class="user-details">
           <h2>{{ getGreeting() }}</h2>
-          <p *ngIf="currentUser">{{ currentUser.firstName }} {{ currentUser.lastName }}</p>
+          <p *ngIf="currentUser">{{ currentUser.nombre }} {{ currentUser.apellido }}</p>
           <span class="employee-id" *ngIf="currentUser">ID: {{ currentUser.employeeId }}</span>
         </div>
       </div>
@@ -31,25 +34,25 @@
     </div>
 
     <!-- Estado de asistencia del día -->
-    <div class="attendance-status" *ngIf="todayAttendance">
+    <div class="attendance-status" *ngIf="todayAttendance.entrada || todayAttendance.salida">
       <ion-card class="status-card">
         <ion-card-header>
           <ion-card-title>Estado de Hoy</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <div class="status-grid">
-            <div class="status-item">
+            <div class="status-item" *ngIf="todayAttendance.entrada">
               <ion-icon name="log-in-outline" color="success"></ion-icon>
               <div>
                 <span class="label">Entrada</span>
-                <span class="time">{{ todayAttendance.checkIn | timeFormat }}</span>
+                <span class="time">{{ todayAttendance.entrada.hora }}</span>
               </div>
             </div>
-            <div class="status-item" *ngIf="todayAttendance.checkOut">
+            <div class="status-item" *ngIf="todayAttendance.salida">
               <ion-icon name="log-out-outline" color="danger"></ion-icon>
               <div>
                 <span class="label">Salida</span>
-                <span class="time">{{ todayAttendance.checkOut | timeFormat }}</span>
+                <span class="time">{{ todayAttendance.salida.hora }}</span>
               </div>
             </div>
           </div>

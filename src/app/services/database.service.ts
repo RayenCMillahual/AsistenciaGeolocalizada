@@ -10,6 +10,7 @@ import {
   collectionData,
   doc,
   setDoc,
+  getDoc,
   Timestamp
 } from '@angular/fire/firestore';
 import { 
@@ -17,7 +18,8 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
   signOut,
-  User as FirebaseUser
+  User as FirebaseUser,
+  onAuthStateChanged
 } from '@angular/fire/auth';
 import { User } from '../models/user.model';
 import { Attendance } from '../models/attendance.model';
@@ -43,7 +45,7 @@ export class DatabaseService {
     await this.seedDefaultLocation();
     
     // Escuchar cambios de autenticación
-    this.auth.onAuthStateChanged(user => {
+    onAuthStateChanged(this.auth, (user) => {
       this.currentUser = user;
     });
   }
@@ -162,14 +164,14 @@ export class DatabaseService {
       
       // Obtener datos adicionales del usuario desde Firestore
       const userDocRef = doc(this.firestore, 'users', userCredential.user.uid);
-      const userDoc = await getDocs(query(collection(this.firestore, 'users'), where('uid', '==', userCredential.user.uid)));
+      const userDoc = await getDoc(userDocRef);
       
-      if (!userDoc.empty) {
-        const userData = userDoc.docs[0].data();
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
         return {
           id: userCredential.user.uid,
           ...userData,
-          fechaCreacion: userData['fechaCreacion'].toDate()
+          fechaCreacion: userData['fechaCreacion']?.toDate() || new Date()
         } as User;
       }
       

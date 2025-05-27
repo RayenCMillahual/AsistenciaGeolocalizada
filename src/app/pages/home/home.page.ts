@@ -1,5 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { IonicModule } from '@ionic/angular';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
@@ -13,6 +16,8 @@ import { Attendance } from '../../models/attendance.model';
   selector: 'app-home',
   templateUrl: './home.page.html',
   styleUrls: ['./home.page.scss'],
+  standalone: true,
+  imports: [CommonModule, FormsModule, IonicModule]
 })
 export class HomePage implements OnInit, OnDestroy {
   currentUser: User | null = null;
@@ -49,6 +54,13 @@ export class HomePage implements OnInit, OnDestroy {
     this.clockInterval = setInterval(() => {
       this.currentTime = new Date();
     }, 1000);
+  }
+
+  getGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Buenos días';
+    if (hour < 18) return 'Buenas tardes';
+    return 'Buenas noches';
   }
 
   async loadUserData() {
@@ -109,10 +121,11 @@ export class HomePage implements OnInit, OnDestroy {
     }
   }
 
-  async showConfirmation(type: 'entrada' | 'salida') {
+  async showConfirmation(type: 'check-in' | 'check-out') {
+    const mappedType = type === 'check-in' ? 'entrada' : 'salida';
     const alert = await this.alertController.create({
       header: 'Confirmar',
-      message: `¿Deseas registrar tu ${type === 'entrada' ? 'entrada' : 'salida'}?`,
+      message: `¿Deseas registrar tu ${mappedType}?`,
       buttons: [
         {
           text: 'Cancelar',
@@ -121,7 +134,7 @@ export class HomePage implements OnInit, OnDestroy {
         {
           text: 'Confirmar',
           handler: () => {
-            this.markAttendance(type);
+            this.markAttendance(mappedType);
           }
         }
       ]
@@ -162,5 +175,10 @@ export class HomePage implements OnInit, OnDestroy {
 
   goToAttendance() {
     this.router.navigate(['/attendance']);
+  }
+
+  openMenu() {
+    // Implementar funcionalidad del menú
+    console.log('Menu opened');
   }
 }

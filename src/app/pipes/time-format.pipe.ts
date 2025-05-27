@@ -1,10 +1,10 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-  name: 'timeFormat'
+  name: 'timeFormat',
+  standalone: true
 })
 export class TimeFormatPipe implements PipeTransform {
-
   transform(value: Date | string | null): string {
     if (!value) return 'N/A';
     
