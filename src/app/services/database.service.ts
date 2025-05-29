@@ -117,42 +117,58 @@ export class DatabaseService {
   // =====================
 
   async registerUser(userData: User): Promise<User> {
-    try {
-      // Crear usuario en Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        this.auth, 
-        userData.email, 
-        userData.password || ''
-      );
-      
-      // Guardar datos adicionales en Firestore
-      const userDoc = {
-        email: userData.email,
-        nombre: userData.nombre,
-        apellido: userData.apellido,
-        telefono: userData.telefono,
-        fechaCreacion: Timestamp.now(),
-        uid: userCredential.user.uid
-      };
-      
-      await setDoc(
-        doc(this.firestore, 'users', userCredential.user.uid), 
-        userDoc
-      );
-      
-      return {
-        id: userCredential.user.uid,
-        ...userDoc,
-        fechaCreacion: new Date()
-      } as User;
-      
-    } catch (error: any) {
-      if (error.code === 'auth/email-already-in-use') {
-        throw new Error('El email ya está registrado');
-      }
-      throw new Error('Error al registrar usuario: ' + error.message);
+  try {
+    // Crear usuario en Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(
+      this.auth, 
+      userData.email, 
+      userData.password || ''
+    );
+    
+    // Guardar datos adicionales en Firestore
+    const userDoc = {
+      email: userData.email,
+      nombre: userData.nombre,
+      apellido: userData.apellido,
+      telefono: userData.telefono || '',
+      employeeId: userData.employeeId || '',
+      departamento: (userData as any).departamento || '', // Agregar departamento
+      fechaCreacion: Timestamp.now(),
+      uid: userCredential.user.uid,
+      activo: true // Campo adicional para control de usuarios
+    };
+    
+    await setDoc(
+      doc(this.firestore, 'users', userCredential.user.uid), 
+      userDoc
+    );
+    
+    return {
+      id: userCredential.user.uid,
+      ...userDoc,
+      fechaCreacion: new Date()
+    } as User;
+    
+  } catch (error: any) {
+    console.error('Registration error:', error);
+    
+    // Manejar errores específicos de Firebase
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        throw new Error('El correo electrónico ya está registrado');
+      case 'auth/weak-password':
+        throw new Error('La contraseña es muy débil. Usa al menos 6 caracteres');
+      case 'auth/invalid-email':
+        throw new Error('El correo electrónico no es válido');
+      case 'auth/operation-not-allowed':
+        throw new Error('El registro está deshabilitado temporalmente');
+      case 'auth/too-many-requests':
+        throw new Error('Demasiados intentos. Intenta más tarde');
+      default:
+        throw new Error('Error al registrar usuario: ' + (error.message || 'Error desconocido'));
     }
   }
+}
 
   async loginUser(email: string, password: string): Promise<User> {
     try {

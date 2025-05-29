@@ -1,11 +1,20 @@
+// Ubicación: app/pages/history/history.page.ts
+
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule, LoadingController, AlertController } from '@ionic/angular';
+import { Router } from '@angular/router';
 import { AttendanceService } from '../../services/attendance.service';
 import { AuthService } from '../../services/auth.service';
 import { Attendance } from '../../models/attendance.model';
 import { User } from '../../models/user.model';
 import { SharedModule } from '../../shared/shared.module';
+
+interface AttendanceGroup {
+  date: Date;
+  entrada?: Attendance;
+  salida?: Attendance;
+}
 
 @Component({
   selector: 'app-history',
@@ -16,6 +25,7 @@ import { SharedModule } from '../../shared/shared.module';
 })
 export class HistoryPage implements OnInit {
   attendanceHistory: Attendance[] = [];
+  groupedAttendances: AttendanceGroup[] = [];
   currentUser: User | null = null;
   selectedSegment = 'week';
   isLoading = false;
@@ -24,7 +34,8 @@ export class HistoryPage implements OnInit {
     private attendanceService: AttendanceService,
     private authService: AuthService,
     private loadingController: LoadingController,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private router: Router
   ) {}
 
   async ngOnInit() {
@@ -43,22 +54,28 @@ export class HistoryPage implements OnInit {
   async loadAttendanceHistory() {
     if (!this.currentUser) return;
 
+    this.isLoading = true;
     const loading = await this.loadingController.create({
-      message: 'Cargando historial...'
+      message: 'Cargando historial...',
+      spinner: 'crescent'
     });
     await loading.present();
 
     try {
-      // Usar el método correcto del servicio
+      // Obtener todas las asistencias del usuario
       this.attendanceHistory = await this.attendanceService.getUserAttendanceHistory();
       
       // Filtrar por fecha según el segmento seleccionado
       this.filterByDateRange();
 
+      // Agrupar asistencias por fecha
+      this.groupAttendancesByDate();
+
     } catch (error) {
       console.error('Error loading attendance history:', error);
-      this.showAlert('Error', 'No se pudo cargar el historial');
+      this.showAlert('Error', 'No se pudo cargar el historial de asistencias');
     } finally {
+      this.isLoading = false;
       await loading.dismiss();
     }
   }
@@ -68,6 +85,7 @@ export class HistoryPage implements OnInit {
 
     let startDate: Date;
     const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
 
     switch (this.selectedSegment) {
       case 'week':
@@ -87,6 +105,8 @@ export class HistoryPage implements OnInit {
         startDate.setDate(startDate.getDate() - 7);
     }
 
+    startDate.setHours(0, 0, 0, 0);
+
     // Filtrar las asistencias por rango de fechas
     this.attendanceHistory = this.attendanceHistory.filter(attendance => {
       const attendanceDate = new Date(attendance.fecha);
@@ -94,34 +114,16 @@ export class HistoryPage implements OnInit {
     });
   }
 
-  onSegmentChange(event: any) {
-    this.selectedSegment = event.detail.value;
-    this.loadAttendanceHistory();
-  }
-
-  getWorkingHours(entrada: Attendance, salida: Attendance): string {
-    if (!entrada || !salida) {
-      return 'Incompleto';
-    }
-
-    const checkInTime = new Date(`${entrada.fecha}T${entrada.hora}`);
-    const checkOutTime = new Date(`${salida.fecha}T${salida.hora}`);
-    const diff = checkOutTime.getTime() - checkInTime.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    return `${hours}h ${minutes}m`;
-  }
-
-  // Agrupar asistencias por fecha para mostrar entrada y salida juntas
-  getGroupedAttendances(): {[key: string]: {entrada?: Attendance, salida?: Attendance}} {
-    const grouped: {[key: string]: {entrada?: Attendance, salida?: Attendance}} = {};
+  groupAttendancesByDate() {
+    const grouped: { [key: string]: AttendanceGroup } = {};
 
     this.attendanceHistory.forEach(attendance => {
       const dateKey = new Date(attendance.fecha).toDateString();
       
       if (!grouped[dateKey]) {
-        grouped[dateKey] = {};
+        grouped[dateKey] = {
+          date: new Date(attendance.fecha)
+        };
       }
 
       if (attendance.tipo === 'entrada') {
@@ -131,20 +133,81 @@ export class HistoryPage implements OnInit {
       }
     });
 
-    return grouped;
+    // Convertir a array y ordenar por fecha descendente
+    this.groupedAttendances = Object.values(grouped)
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
-  async showAttendanceDetails(attendance: Attendance) {
-    if (!attendance) return;
+  onSegmentChange(event: any) {
+    this.selectedSegment = event.detail.value;
+    this.loadAttendanceHistory();
+  }
+
+  getWorkingHours(entrada?: Attendance, salida?: Attendance): string {
+    if (!entrada || !salida) {
+      return 'Incompleto';
+    }
+
+    try {
+      const entradaTime = new Date(`${new Date(entrada.fecha).toDateString()} ${entrada.hora}`);
+      const salidaTime = new Date(`${new Date(salida.fecha).toDateString()} ${salida.hora}`);
+      
+      if (isNaN(entradaTime.getTime()) || isNaN(salidaTime.getTime())) {
+        return 'Error';
+      }
+
+      const diff = salidaTime.getTime() - entradaTime.getTime();
+      
+      if (diff <= 0) {
+        return 'Error';
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      return `${hours}h ${minutes}m`;
+    } catch (error) {
+      console.error('Error calculating working hours:', error);
+      return 'Error';
+    }
+  }
+
+  getWorkingDays(): number {
+    return this.groupedAttendances.filter(group => group.entrada && group.salida).length;
+  }
+
+  async showDayDetails(group: AttendanceGroup) {
+    const entradaInfo = group.entrada ? 
+      `<p><strong>Entrada:</strong> ${group.entrada.hora}</p>
+       <p><strong>Ubicación válida:</strong> ${group.entrada.ubicacionValida ? 'Sí' : 'No'}</p>` : 
+      '<p><strong>Entrada:</strong> No registrada</p>';
+
+    const salidaInfo = group.salida ? 
+      `<p><strong>Salida:</strong> ${group.salida.hora}</p>
+       <p><strong>Ubicación válida:</strong> ${group.salida.ubicacionValida ? 'Sí' : 'No'}</p>` : 
+      '<p><strong>Salida:</strong> No registrada</p>';
+
+    const workingHours = this.getWorkingHours(group.entrada, group.salida);
 
     const alert = await this.alertController.create({
-      header: 'Detalles de Asistencia',
+      header: 'Detalles del Día',
+      subHeader: new Date(group.date).toLocaleDateString('es-ES', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      }),
       message: `
-        <p><strong>Fecha:</strong> ${new Date(attendance.fecha).toLocaleDateString()}</p>
-        <p><strong>Tipo:</strong> ${attendance.tipo}</p>
-        <p><strong>Hora:</strong> ${attendance.hora}</p>
+        ${entradaInfo}
+        ${salidaInfo}
+        <p><strong>Horas trabajadas:</strong> ${workingHours}</p>
       `,
-      buttons: ['OK']
+      buttons: [
+        {
+          text: 'Cerrar',
+          role: 'cancel'
+        }
+      ]
     });
     await alert.present();
   }
@@ -159,7 +222,14 @@ export class HistoryPage implements OnInit {
   }
 
   async doRefresh(event: any) {
-    await this.loadAttendanceHistory();
-    event.target.complete();
+    try {
+      await this.loadAttendanceHistory();
+    } finally {
+      event.target.complete();
+    }
+  }
+
+  goToHome() {
+    this.router.navigate(['/home']);
   }
 }

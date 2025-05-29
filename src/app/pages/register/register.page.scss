@@ -1,65 +1,268 @@
+// Ubicación: app/pages/register/register.page.scss
+
 .register-content {
-    --background: var(--light-color);
+  --background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+  
+  .register-container {
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     
-    .register-container {
-      padding: 20px;
+    .header-container {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-top: 20px;
       
-      .header-container {
-        text-align: center;
-        margin-bottom: 32px;
+      .icon-container {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 24px rgba(56, 128, 255, 0.3);
         
-        h1 {
-          color: var(--dark-color);
-          font-size: 28px;
-          font-weight: 700;
-          margin-bottom: 8px;
+        .header-icon {
+          font-size: 36px;
+          color: white;
+        }
+      }
+      
+      h1 {
+        color: var(--dark-color);
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      
+      p {
+        color: var(--medium-color);
+        font-size: 16px;
+        margin: 0;
+        line-height: 1.4;
+      }
+    }
+    
+    .register-form {
+      background: white;
+      border-radius: 20px;
+      padding: 32px 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      flex: 1;
+      
+      .form-item {
+        margin-bottom: 8px;
+        --border-radius: 12px;
+        --border-width: 2px;
+        --border-color: #e0e0e0;
+        --border-color-focused: var(--primary-color);
+        transition: all 0.3s ease;
+        
+        &.item-has-error {
+          --border-color: var(--danger-color);
+          --border-color-focused: var(--danger-color);
         }
         
-        p {
+        ion-icon {
           color: var(--medium-color);
+          margin-right: 12px;
+          font-size: 18px;
+        }
+        
+        ion-label {
+          font-weight: 500;
+        }
+        
+        ion-input {
           font-size: 16px;
-          margin: 0;
         }
-      }
-      
-      .register-form {
-        background: white;
-        border-radius: var(--border-radius);
-        padding: 32px 24px;
-        box-shadow: var(--box-shadow);
-        margin-bottom: 20px;
         
-        .form-item {
-          margin-bottom: 16px;
-          --border-radius: 8px;
+        ion-select {
+          font-size: 16px;
+        }
+        
+        .password-toggle {
+          --color: var(--medium-color);
+          --padding-start: 8px;
+          --padding-end: 8px;
           
-          ion-icon {
-            color: var(--medium-color);
-            margin-right: 12px;
-          }
-        }
-        
-        .register-button {
-          margin-top: 24px;
-          height: 48px;
-          --border-radius: 8px;
-          font-weight: 600;
-        }
-      }
-      
-      .login-link {
-        text-align: center;
-        
-        p {
-          color: var(--dark-color);
-          margin: 0;
-          
-          ion-button {
+          &:hover {
             --color: var(--primary-color);
-            font-weight: 600;
           }
+        }
+      }
+      
+      .error-message {
+        display: flex;
+        align-items: center;
+        color: var(--danger-color);
+        font-size: 12px;
+        font-weight: 500;
+        margin: 4px 0 12px 16px;
+        
+        ion-icon {
+          font-size: 14px;
+          margin-right: 6px;
+        }
+      }
+      
+      .required-info {
+        display: flex;
+        align-items: center;
+        background: rgba(56, 128, 255, 0.1);
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin: 20px 0;
+        
+        ion-icon {
+          color: var(--primary-color);
+          font-size: 16px;
+          margin-right: 8px;
+        }
+        
+        span {
+          color: var(--primary-color);
+          font-size: 13px;
+          font-weight: 500;
+        }
+      }
+      
+      .register-button {
+        margin-top: 24px;
+        height: 52px;
+        --border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        --box-shadow: 0 4px 16px rgba(56, 128, 255, 0.3);
+        
+        &:disabled {
+          opacity: 0.5;
+          --box-shadow: none;
+        }
+        
+        &:hover:not([disabled]) {
+          transform: translateY(-1px);
+          --box-shadow: 0 6px 20px rgba(56, 128, 255, 0.4);
+        }
+      }
+    }
+    
+    .login-link {
+      text-align: center;
+      margin-top: auto;
+      padding: 20px 0;
+      
+      p {
+        color: var(--dark-color);
+        margin: 0;
+        font-size: 15px;
+        
+        .link-button {
+          --color: var(--primary-color);
+          font-weight: 600;
+          text-decoration: underline;
+          margin-left: 4px;
         }
       }
     }
   }
-  
+}
+
+// Estados de loading y animaciones
+.register-form {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive design
+@media (max-width: 480px) {
+  .register-content {
+    .register-container {
+      padding: 16px;
+      
+      .header-container {
+        margin-bottom: 24px;
+        
+        .icon-container {
+          width: 64px;
+          height: 64px;
+          
+          .header-icon {
+            font-size: 28px;
+          }
+        }
+        
+        h1 {
+          font-size: 24px;
+        }
+        
+        p {
+          font-size: 14px;
+        }
+      }
+      
+      .register-form {
+        padding: 24px 20px;
+        border-radius: 16px;
+        
+        .required-info {
+          padding: 10px 12px;
+          
+          span {
+            font-size: 12px;
+          }
+        }
+        
+        .register-button {
+          height: 48px;
+          font-size: 15px;
+        }
+      }
+      
+      .login-link {
+        padding: 16px 0;
+        
+        p {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+}
+
+// Animaciones de focus para mejor UX
+ion-item {
+  &.item-has-focus {
+    --border-color: var(--primary-color);
+    transform: scale(1.02);
+    
+    ion-icon {
+      color: var(--primary-color);
+    }
+  }
+}
+
+// Mejoras en el select
+ion-select {
+  --placeholder-color: var(--medium-color);
+  --placeholder-opacity: 0.7;
+}
+
+// Efectos hover en botones
+ion-button:not([disabled]):hover {
+  transition: all 0.2s ease;
+}

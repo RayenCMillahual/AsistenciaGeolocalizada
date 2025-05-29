@@ -1,101 +1,224 @@
+<!-- Ubicación: app/pages/register/register.page.html -->
+
 <ion-header [translucent]="true">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/login"></ion-back-button>
     </ion-buttons>
-    <ion-title>Registro</ion-title>
+    <ion-title>Crear Cuenta</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="register-content">
   <div class="register-container">
+    
+    <!-- Header mejorado -->
     <div class="header-container">
-      <h1>Crear Cuenta</h1>
-      <p>Completa tus datos para registrarte</p>
+      <div class="icon-container">
+        <ion-icon name="person-add-outline" class="header-icon"></ion-icon>
+      </div>
+      <h1>Registro de Usuario</h1>
+      <p>Completa tus datos para crear tu cuenta</p>
     </div>
 
+    <!-- Formulario con validaciones -->
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
+      
+      <!-- Nombre y Apellido -->
       <ion-row>
         <ion-col size="6">
-          <ion-item fill="outline" class="form-item">
-            <ion-label position="floating">Nombre</ion-label>
-            <ion-input formControlName="firstName"></ion-input>
+          <ion-item 
+            fill="outline" 
+            class="form-item"
+            [class.item-has-error]="hasFieldError('firstName')">
+            <ion-label position="floating">Nombre *</ion-label>
+            <ion-input 
+              formControlName="firstName"
+              type="text"
+              autocomplete="given-name">
+            </ion-input>
             <ion-icon name="person-outline" slot="start"></ion-icon>
           </ion-item>
+          <div class="error-message" *ngIf="getFieldErrorMessage('firstName')">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            {{ getFieldErrorMessage('firstName') }}
+          </div>
         </ion-col>
+        
         <ion-col size="6">
-          <ion-item fill="outline" class="form-item">
-            <ion-label position="floating">Apellido</ion-label>
-            <ion-input formControlName="lastName"></ion-input>
+          <ion-item 
+            fill="outline" 
+            class="form-item"
+            [class.item-has-error]="hasFieldError('lastName')">
+            <ion-label position="floating">Apellido *</ion-label>
+            <ion-input 
+              formControlName="lastName"
+              type="text"
+              autocomplete="family-name">
+            </ion-input>
           </ion-item>
+          <div class="error-message" *ngIf="getFieldErrorMessage('lastName')">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            {{ getFieldErrorMessage('lastName') }}
+          </div>
         </ion-col>
       </ion-row>
 
-      <ion-item fill="outline" class="form-item">
-        <ion-label position="floating">Correo Electrónico</ion-label>
-        <ion-input type="email" formControlName="email"></ion-input>
+      <!-- Email -->
+      <ion-item 
+        fill="outline" 
+        class="form-item"
+        [class.item-has-error]="hasFieldError('email')">
+        <ion-label position="floating">Correo Electrónico *</ion-label>
+        <ion-input 
+          type="email" 
+          formControlName="email"
+          autocomplete="email">
+        </ion-input>
         <ion-icon name="mail-outline" slot="start"></ion-icon>
       </ion-item>
+      <div class="error-message" *ngIf="getFieldErrorMessage('email')">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        {{ getFieldErrorMessage('email') }}
+      </div>
 
-      <ion-item fill="outline" class="form-item">
-        <ion-label position="floating">Teléfono</ion-label>
-        <ion-input type="tel" formControlName="phone"></ion-input>
+      <!-- Teléfono -->
+      <ion-item 
+        fill="outline" 
+        class="form-item"
+        [class.item-has-error]="hasFieldError('phone')">
+        <ion-label position="floating">Teléfono *</ion-label>
+        <ion-input 
+          type="tel" 
+          formControlName="phone"
+          autocomplete="tel">
+        </ion-input>
         <ion-icon name="call-outline" slot="start"></ion-icon>
       </ion-item>
+      <div class="error-message" *ngIf="getFieldErrorMessage('phone')">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        {{ getFieldErrorMessage('phone') }}
+      </div>
 
+      <!-- ID Empleado y Departamento -->
       <ion-row>
         <ion-col size="6">
-          <ion-item fill="outline" class="form-item">
-            <ion-label position="floating">ID Empleado</ion-label>
-            <ion-input formControlName="employeeId"></ion-input>
+          <ion-item 
+            fill="outline" 
+            class="form-item"
+            [class.item-has-error]="hasFieldError('employeeId')">
+            <ion-label position="floating">ID Empleado *</ion-label>
+            <ion-input 
+              formControlName="employeeId"
+              type="text">
+            </ion-input>
             <ion-icon name="card-outline" slot="start"></ion-icon>
           </ion-item>
+          <div class="error-message" *ngIf="getFieldErrorMessage('employeeId')">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            {{ getFieldErrorMessage('employeeId') }}
+          </div>
         </ion-col>
+        
         <ion-col size="6">
-          <ion-item fill="outline" class="form-item">
-            <ion-label position="floating">Departamento</ion-label>
-            <ion-select formControlName="department" placeholder="Seleccionar">
+          <ion-item 
+            fill="outline" 
+            class="form-item"
+            [class.item-has-error]="hasFieldError('department')">
+            <ion-label position="floating">Departamento *</ion-label>
+            <ion-select 
+              formControlName="department" 
+              placeholder="Seleccionar"
+              interface="popover">
               <ion-select-option value="administracion">Administración</ion-select-option>
               <ion-select-option value="ventas">Ventas</ion-select-option>
               <ion-select-option value="marketing">Marketing</ion-select-option>
               <ion-select-option value="sistemas">Sistemas</ion-select-option>
               <ion-select-option value="recursos-humanos">Recursos Humanos</ion-select-option>
+              <ion-select-option value="operaciones">Operaciones</ion-select-option>
             </ion-select>
+            <ion-icon name="business-outline" slot="start"></ion-icon>
           </ion-item>
+          <div class="error-message" *ngIf="getFieldErrorMessage('department')">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            {{ getFieldErrorMessage('department') }}
+          </div>
         </ion-col>
       </ion-row>
 
-      <ion-item fill="outline" class="form-item">
-        <ion-label position="floating">Contraseña</ion-label>
-        <ion-input [type]="showPassword ? 'text' : 'password'" formControlName="password"></ion-input>
+      <!-- Contraseña -->
+      <ion-item 
+        fill="outline" 
+        class="form-item"
+        [class.item-has-error]="hasFieldError('password')">
+        <ion-label position="floating">Contraseña *</ion-label>
+        <ion-input 
+          [type]="showPassword ? 'text' : 'password'" 
+          formControlName="password"
+          autocomplete="new-password">
+        </ion-input>
         <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
-        <ion-button fill="clear" slot="end" (click)="togglePassword('password')" type="button">
+        <ion-button 
+          fill="clear" 
+          slot="end" 
+          (click)="togglePassword('password')" 
+          type="button"
+          class="password-toggle">
           <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
         </ion-button>
       </ion-item>
+      <div class="error-message" *ngIf="getFieldErrorMessage('password')">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        {{ getFieldErrorMessage('password') }}
+      </div>
 
-      <ion-item fill="outline" class="form-item">
-        <ion-label position="floating">Confirmar Contraseña</ion-label>
-        <ion-input [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword"></ion-input>
+      <!-- Confirmar Contraseña -->
+      <ion-item 
+        fill="outline" 
+        class="form-item"
+        [class.item-has-error]="hasFieldError('confirmPassword')">
+        <ion-label position="floating">Confirmar Contraseña *</ion-label>
+        <ion-input 
+          [type]="showConfirmPassword ? 'text' : 'password'" 
+          formControlName="confirmPassword"
+          autocomplete="new-password">
+        </ion-input>
         <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
-        <ion-button fill="clear" slot="end" (click)="togglePassword('confirm')" type="button">
+        <ion-button 
+          fill="clear" 
+          slot="end" 
+          (click)="togglePassword('confirm')" 
+          type="button"
+          class="password-toggle">
           <ion-icon [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
         </ion-button>
       </ion-item>
+      <div class="error-message" *ngIf="getFieldErrorMessage('confirmPassword')">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        {{ getFieldErrorMessage('confirmPassword') }}
+      </div>
 
+      <!-- Información de campos requeridos -->
+      <div class="required-info">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <span>Los campos marcados con * son obligatorios</span>
+      </div>
+
+      <!-- Botón de registro -->
       <ion-button 
         expand="block" 
         type="submit" 
         [disabled]="!registerForm.valid"
         class="register-button">
-        Registrarse
-        <ion-icon name="person-add-outline" slot="end"></ion-icon>
+        <ion-icon name="person-add-outline" slot="start"></ion-icon>
+        Crear Cuenta
       </ion-button>
     </form>
 
+    <!-- Link para login -->
     <div class="login-link">
       <p>¿Ya tienes cuenta? 
-        <ion-button fill="clear" (click)="goToLogin()">
+        <ion-button fill="clear" (click)="goToLogin()" class="link-button">
           Inicia sesión aquí
         </ion-button>
       </p>

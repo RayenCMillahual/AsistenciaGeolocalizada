@@ -3,68 +3,176 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>Historial</ion-title>
+    <ion-title>Historial de Asistencias</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="history-content">
   <div class="history-container">
-    <!-- Segmentos de filtro -->
-    <ion-segment 
-      value="week" 
-      (ionChange)="onSegmentChange($event)"
-      class="filter-segment">
-      <ion-segment-button value="week">
-        <ion-label>Semana</ion-label>
-      </ion-segment-button>
-      <ion-segment-button value="month">
-        <ion-label>Mes</ion-label>
-      </ion-segment-button>
-      <ion-segment-button value="year">
-        <ion-label>Año</ion-label>
-      </ion-segment-button>
-    </ion-segment>
+    <!-- Filtros mejorados -->
+    <div class="filter-section">
+      <ion-segment 
+        value="week" 
+        (ionChange)="onSegmentChange($event)"
+        class="filter-segment">
+        <ion-segment-button value="week">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <ion-label>Semana</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="month">
+          <ion-icon name="calendar-number-outline"></ion-icon>
+          <ion-label>Mes</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="year">
+          <ion-icon name="calendar-sharp"></ion-icon>
+          <ion-label>Año</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </div>
 
     <!-- Refresher -->
     <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
-      <ion-refresher-content></ion-refresher-content>
+      <ion-refresher-content
+        pullingIcon="chevron-down-circle-outline"
+        pullingText="Desliza para actualizar"
+        refreshingSpinner="circles"
+        refreshingText="Actualizando...">
+      </ion-refresher-content>
     </ion-refresher>
 
-    <!-- Lista de asistencias -->
-    <div class="attendance-list" *ngIf="attendanceHistory.length > 0; else noData">
-      <ion-card 
-        *ngFor="let attendance of attendanceHistory" 
-        class="attendance-card"
-        (click)="showAttendanceDetails(attendance)">
+    <!-- Estadísticas rápidas -->
+    <div class="stats-section" *ngIf="attendanceHistory.length > 0">
+      <ion-card class="stats-card">
         <ion-card-content>
-          <div class="card-header">
-            <div class="date-info">
-              <h3>{{ attendance.fecha | dateFormat }}</h3>
-              <span class="status" [class]="attendance.tipo">
-                {{ attendance.tipo | titlecase }}
-              </span>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <ion-icon name="calendar-outline" color="primary"></ion-icon>
+              <div class="stat-content">
+                <span class="stat-number">{{ attendanceHistory.length }}</span>
+                <span class="stat-label">Registros</span>
+              </div>
             </div>
-            <ion-icon name="chevron-forward-outline"></ion-icon>
-          </div>
-          
-          <div class="time-info">
-            <div class="time-item">
-              <ion-icon [name]="attendance.tipo === 'entrada' ? 'log-in-outline' : 'log-out-outline'" 
-                        [color]="attendance.tipo === 'entrada' ? 'success' : 'danger'"></ion-icon>
-              <span>{{ attendance.hora | timeFormat }}</span>
+            <div class="stat-item">
+              <ion-icon name="time-outline" color="success"></ion-icon>
+              <div class="stat-content">
+                <span class="stat-number">{{ getWorkingDays() }}</span>
+                <span class="stat-label">Días trabajados</span>
+              </div>
             </div>
           </div>
         </ion-card-content>
       </ion-card>
     </div>
 
-    <!-- Estado vacío -->
+    <!-- Lista de asistencias mejorada -->
+    <div class="attendance-list" *ngIf="groupedAttendances && groupedAttendances.length > 0; else noData">
+      <div 
+        *ngFor="let group of groupedAttendances" 
+        class="attendance-group">
+        
+        <div class="date-header">
+          <h3>{{ group.date | date:'EEEE, d MMMM y':'es-ES' }}</h3>
+          <span class="working-hours" 
+                [class.complete]="group.salida"
+                [class.incomplete]="!group.salida">
+            {{ group.salida ? getWorkingHours(group.entrada, group.salida) : 'Incompleto' }}
+          </span>
+        </div>
+
+        <ion-card class="attendance-card">
+          <ion-card-content>
+            <div class="attendance-details">
+              <!-- Entrada -->
+              <div class="attendance-item" *ngIf="group.entrada">
+                <div class="item-header">
+                  <ion-icon name="log-in-outline" color="success"></ion-icon>
+                  <span class="item-title">Entrada</span>
+                </div>
+                <div class="item-content">
+                  <span class="time">{{ group.entrada.hora }}</span>
+                  <span class="status valid" *ngIf="group.entrada.ubicacionValida">
+                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+                    Ubicación válida
+                  </span>
+                  <span class="status invalid" *ngIf="!group.entrada.ubicacionValida">
+                    <ion-icon name="warning-outline"></ion-icon>
+                    Ubicación no válida
+                  </span>
+                </div>
+              </div>
+
+              <!-- Salida -->
+              <div class="attendance-item" *ngIf="group.salida">
+                <div class="item-header">
+                  <ion-icon name="log-out-outline" color="danger"></ion-icon>
+                  <span class="item-title">Salida</span>
+                </div>
+                <div class="item-content">
+                  <span class="time">{{ group.salida.hora }}</span>
+                  <span class="status valid" *ngIf="group.salida.ubicacionValida">
+                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+                    Ubicación válida
+                  </span>
+                  <span class="status invalid" *ngIf="!group.salida.ubicacionValida">
+                    <ion-icon name="warning-outline"></ion-icon>
+                    Ubicación no válida
+                  </span>
+                </div>
+              </div>
+
+              <!-- Mensaje si no hay salida -->
+              <div class="attendance-item incomplete" *ngIf="group.entrada && !group.salida">
+                <div class="item-header">
+                  <ion-icon name="time-outline" color="warning"></ion-icon>
+                  <span class="item-title">Salida pendiente</span>
+                </div>
+                <div class="item-content">
+                  <span class="incomplete-text">No se registró la salida</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botón para ver detalles -->
+            <ion-button 
+              fill="clear" 
+              size="small" 
+              class="details-button"
+              (click)="showDayDetails(group)">
+              <ion-icon name="information-circle-outline" slot="start"></ion-icon>
+              Ver detalles
+            </ion-button>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </div>
+
+    <!-- Estado vacío mejorado -->
     <ng-template #noData>
       <div class="empty-state">
-        <ion-icon name="calendar-outline" class="empty-icon"></ion-icon>
-        <h2>No hay registros</h2>
+        <div class="empty-icon-container">
+          <ion-icon name="calendar-outline" class="empty-icon"></ion-icon>
+        </div>
+        <h2>Sin registros</h2>
         <p>No se encontraron registros de asistencia para el período seleccionado.</p>
+        <ion-button 
+          fill="outline"
+          color="primary"
+          (click)="goToHome()">
+          <ion-icon name="home-outline" slot="start"></ion-icon>
+          Ir al inicio
+        </ion-button>
       </div>
     </ng-template>
+
+    <!-- Loading skeleton -->
+    <div class="loading-skeleton" *ngIf="isLoading">
+      <div class="skeleton-card" *ngFor="let item of [1,2,3]">
+        <div class="skeleton-header"></div>
+        <div class="skeleton-content">
+          <div class="skeleton-item"></div>
+          <div class="skeleton-item"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </ion-content>

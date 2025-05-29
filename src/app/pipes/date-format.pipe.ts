@@ -5,15 +5,19 @@ import { Pipe, PipeTransform } from '@angular/core';
   standalone: true
 })
 export class DateFormatPipe implements PipeTransform {
-  transform(value: Date | string | null): string {
-    if (!value) return 'N/A';
+  transform(value: any): string {
+    if (!value) return '';
     
     const date = new Date(value);
+    
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+    
     return date.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
     });
   }
 }
