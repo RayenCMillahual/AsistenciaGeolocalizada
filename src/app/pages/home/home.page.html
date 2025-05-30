@@ -1,2 +1,233 @@
-<!-- ARCHIVO NO NECESARIO con el template inline, pero si existe, reemplázalo con: -->
-<p>Este archivo no se usa porque el template está inline en el .ts</p>
+<!-- src/app/pages/home/home.page.html -->
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-title>Sistema de Asistencia - ITS Cipolletti</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="refreshData()" fill="clear">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="logout()" fill="clear">
+        <ion-icon name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="home-content">
+  <!-- Refresher -->
+  <ion-refresher slot="fixed" (ionRefresh)="refreshData($event)">
+    <ion-refresher-content
+      pullingIcon="refresh-outline"
+      pullingText="Desliza para actualizar"
+      refreshingSpinner="crescent"
+      refreshingText="Actualizando...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <div class="home-container">
+    
+    <!-- Header de Bienvenida -->
+    <div class="welcome-section">
+      <div class="welcome-background">
+        <!-- Información del usuario -->
+        <div class="user-info">
+          <div class="avatar-container">
+            <ion-avatar class="user-avatar">
+              <ion-icon name="person-outline" class="avatar-icon"></ion-icon>
+            </ion-avatar>
+            <div class="status-indicator" [class.online]="canCheckIn || canCheckOut"></div>
+          </div>
+          
+          <div class="user-details">
+            <h1 class="greeting">{{ getGreeting() }}</h1>
+            <h2 class="user-name" *ngIf="currentUser">
+              {{ currentUser.nombre }} {{ currentUser.apellido }}
+            </h2>
+            <h2 class="user-name" *ngIf="!currentUser">
+              Cargando usuario...
+            </h2>
+            
+            <div class="employee-info" *ngIf="currentUser?.materia">
+              <ion-icon name="calendarOutline"></ion-icon>
+              <span>{{ currentUser?.materia }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reloj digital -->
+        <div class="clock-section">
+          <div class="digital-clock">
+            <div class="time-display">
+              <span class="time">{{ currentTimeString }}</span>
+              <span class="seconds">{{ currentSecondsString }}</span>
+            </div>
+            <div class="date-display">
+              <ion-icon name="calendar-outline"></ion-icon>
+              <span>{{ currentDateString }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado de Asistencias de Hoy -->
+    <div class="status-section">
+      <div class="status-card" *ngIf="todayAttendances.entrada || todayAttendances.salida; else noAttendanceCard">
+        <div class="status-header">
+          <h3>
+            <ion-icon name="time-outline"></ion-icon>
+            Registro del Día
+          </h3>
+          <ion-badge [color]="getAttendanceStatusColor()" class="status-badge">
+            {{getAttendanceStatusColor() }}
+          </ion-badge>
+        </div>
+        
+        <div class="status-content">
+          <div class="attendance-timeline">
+            <!-- Entrada -->
+            <div class="timeline-item entrada" [class.completed]="todayAttendances.entrada">
+              <div class="timeline-marker entrada" [class.completed]="todayAttendances.entrada">
+                <ion-icon name="log-in-outline"></ion-icon>
+              </div>
+              <div class="timeline-content">
+                <h4>Entrada</h4>
+                <p *ngIf="todayAttendances.entrada; else pendingEntrada">
+                  {{ todayAttendances.entrada.hora }}
+                  <span class="location-status" [class.valid]="todayAttendances.entrada.ubicacionValida">
+                    <ion-icon [name]="todayAttendances.entrada.ubicacionValida ? 'checkmark-circle-outline' : 'alert-circle-outline'"></ion-icon>
+                  </span>
+                </p>
+                <ng-template #pendingEntrada>
+                  <p class="pending">Pendiente de registro</p>
+                </ng-template>
+              </div>
+            </div>
+
+            <!-- Conector visual -->
+            <div class="timeline-connector" [class.active]="todayAttendances.entrada"></div>
+
+            <!-- Salida -->
+            <div class="timeline-item salida" [class.completed]="todayAttendances.salida">
+              <div class="timeline-marker salida" [class.completed]="todayAttendances.salida">
+                <ion-icon name="log-out-outline"></ion-icon>
+              </div>
+              <div class="timeline-content">
+                <h4>Salida</h4>
+                <p *ngIf="todayAttendances.salida; else pendingSalida">
+                  {{ todayAttendances.salida.hora }}
+                  <span class="location-status" [class.valid]="todayAttendances.salida.ubicacionValida">
+                    <ion-icon [name]="todayAttendances.salida.ubicacionValida ? 'checkmark-circle-outline' : 'alert-circle-outline'"></ion-icon>
+                  </span>
+                </p>
+                <ng-template #pendingSalida>
+                  <p class="pending">Pendiente de registro</p>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+
+          <!-- Horas trabajadas -->
+          <div class="working-hours" *ngIf="todayAttendances.entrada && todayAttendances.salida">
+            <ion-icon name="time-outline"></ion-icon>
+            <span>Horas trabajadas: {{ calculateWorkingHours() }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjeta cuando no hay registros -->
+      <ng-template #noAttendanceCard>
+        <div class="no-attendance-card">
+          <div class="no-attendance-content">
+            <ion-icon name="calendar-outline" class="no-attendance-icon"></ion-icon>
+            <h3>Sin registros hoy</h3>
+            <p>Comienza registrando tu entrada al ITS</p>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="action-section">
+      <!-- Registrar Entrada -->
+      <div class="action-card entrada" [class.disabled]="!canCheckIn || isLoading" (click)="canCheckIn && !isLoading && registerEntry()">
+        <div class="action-content">
+          <div class="action-icon-container entrada">
+            <ion-spinner *ngIf="isLoading && actionType === 'entrada'" name="crescent"></ion-spinner>
+            <ion-icon *ngIf="!isLoading || actionType !== 'entrada'" name="log-in-outline" class="action-icon"></ion-icon>
+          </div>
+          <div class="action-details">
+            <h3>Registrar Entrada</h3>
+            <p *ngIf="canCheckIn && !isLoading">Toca para marcar tu llegada al ITS</p>
+            <p *ngIf="!canCheckIn" class="disabled-text">Ya registraste tu entrada hoy</p>
+            <p *ngIf="isLoading && actionType === 'entrada'" class="loading-text">Registrando entrada...</p>
+          </div>
+          <div class="action-status">
+            <ion-icon 
+              [name]="canCheckIn ? 'chevron-forward' : 'checkmark-circle-outline'" 
+              [color]="canCheckIn ? 'medium' : 'success'">
+            </ion-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registrar Salida -->
+      <div class="action-card salida" [class.disabled]="!canCheckOut || isLoading" (click)="canCheckOut && !isLoading && registerExit()">
+        <div class="action-content">
+          <div class="action-icon-container salida">
+            <ion-spinner *ngIf="isLoading && actionType === 'salida'" name="crescent"></ion-spinner>
+            <ion-icon *ngIf="!isLoading || actionType !== 'salida'" name="log-out-outline" class="action-icon"></ion-icon>
+          </div>
+          <div class="action-details">
+            <h3>Registrar Salida</h3>
+            <p *ngIf="canCheckOut && !isLoading">Toca para marcar tu salida del ITS</p>
+            <p *ngIf="!canCheckOut && !todayAttendances.entrada" class="disabled-text">Primero registra tu entrada</p>
+            <p *ngIf="!canCheckOut && todayAttendances.entrada && todayAttendances.salida" class="disabled-text">Ya registraste tu salida hoy</p>
+            <p *ngIf="isLoading && actionType === 'salida'" class="loading-text">Registrando salida...</p>
+          </div>
+          <div class="action-status">
+            <ion-icon 
+              [name]="canCheckOut ? 'chevron-forward' : (todayAttendances.salida ? 'checkmark-circle-outline' : 'location-outline')" 
+              [color]="canCheckOut ? 'medium' : (todayAttendances.salida ? 'success' : 'medium')">
+            </ion-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información del Usuario -->
+    <div class="user-section" *ngIf="currentUser">
+      <h3 class="section-title">
+        <ion-icon name="person-outline"></ion-icon>
+        Mi Información
+      </h3>
+      
+      <ion-card class="user-card">
+        <ion-card-content>
+          <div class="info-grid">
+            <div class="info-item" *ngIf="currentUser.email">
+              <div class="info-label">Email</div>
+              <div class="info-value">{{ currentUser.email }}</div>
+            </div>
+            
+            <div class="info-item" *ngIf="currentUser.carrera">
+              <div class="info-label">Carrera</div>
+              <div class="info-value">{{ currentUser.carrera }}</div>
+            </div>
+            
+            <div class="info-item" *ngIf="currentUser.materia">
+              <div class="info-label">Materia</div>
+              <div class="info-value">{{ currentUser.materia }}</div>
+            </div>
+            
+            <div class="info-item" *ngIf="currentUser.employeeId">
+              <div class="info-label">ID Empleado</div>
+              <div class="info-value">{{ currentUser.employeeId }}</div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+  </div>
+</ion-content>
