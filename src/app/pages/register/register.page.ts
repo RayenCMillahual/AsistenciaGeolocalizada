@@ -1,15 +1,31 @@
-// Ubicación: app/pages/register/register.page.ts
-
+// src/app/pages/register/register.page.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
-  IonicModule,
-  LoadingController, 
-  AlertController, 
-  ToastController 
-} from '@ionic/angular';
+  IonContent, 
+  IonHeader, 
+  IonTitle, 
+  IonToolbar,
+  IonButtons,
+  IonBackButton,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
+  IonItem,
+  IonLabel,
+  IonInput,
+  IonSelect,
+  IonSelectOption,
+  IonButton,
+  IonText,
+  IonSpinner,
+  AlertController,
+  LoadingController
+} from '@ionic/angular/standalone';
+
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -18,62 +34,74 @@ import { AuthService } from '../../services/auth.service';
   styleUrls: ['./register.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
-    IonicModule
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    IonContent,
+    IonHeader,
+    IonTitle,
+    IonToolbar,
+    IonButtons,
+    IonBackButton,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardContent,
+    IonItem,
+    IonLabel,
+    IonInput,
+    IonSelect,
+    IonSelectOption,
+    IonButton,
+    IonText,
+    IonSpinner
   ]
 })
 export class RegisterPage implements OnInit {
-  registerForm: FormGroup;
-  showPassword = false;
-  showConfirmPassword = false;
+  registerForm!: FormGroup;
+  isLoading = false;
 
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private loadingController: LoadingController,
     private alertController: AlertController,
-    private toastController: ToastController
-  ) {
+    private loadingController: LoadingController
+  ) {}
+
+  ngOnInit() {
     this.registerForm = this.formBuilder.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
+      nombre: ['', [Validators.required, Validators.minLength(2)]],
+      apellido: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.pattern(/^\d{8,15}$/)]],
-      employeeId: ['', [Validators.required]],
-      department: ['', [Validators.required]],
+      telefono: ['', [Validators.pattern(/^[\+]?[0-9\s\-\(\)]+$/)]],
+      employeeId: [''],
+      departamento: [''],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
+    }, {
+      validators: this.passwordMatchValidator
+    });
   }
 
-  ngOnInit() {}
-
-  passwordMatchValidator(form: FormGroup) {
-    const password = form.get('password');
-    const confirmPassword = form.get('confirmPassword');
+  // Validador personalizado para verificar que las contraseñas coincidan
+  passwordMatchValidator(control: AbstractControl): { [key: string]: boolean } | null {
+    const password = control.get('password');
+    const confirmPassword = control.get('confirmPassword');
     
     if (password && confirmPassword && password.value !== confirmPassword.value) {
-      confirmPassword.setErrors({ passwordMismatch: true });
       return { passwordMismatch: true };
-    }
-    
-    // Limpiar errores si las contraseñas coinciden
-    if (confirmPassword && confirmPassword.errors?.['passwordMismatch'] && password?.value === confirmPassword.value) {
-      delete confirmPassword.errors['passwordMismatch'];
-      if (Object.keys(confirmPassword.errors).length === 0) {
-        confirmPassword.setErrors(null);
-      }
     }
     
     return null;
   }
 
-  async onSubmit() {
+  async onRegister() {
     if (this.registerForm.valid) {
+      this.isLoading = true;
+      
       const loading = await this.loadingController.create({
-        message: 'Registrando usuario...',
+        message: 'Creando cuenta...',
         spinner: 'crescent'
       });
       await loading.present();
@@ -81,124 +109,64 @@ export class RegisterPage implements OnInit {
       try {
         const formData = this.registerForm.value;
         
-        // Crear objeto User con la estructura correcta
-        const userData = {
-          email: formData.email,
-          password: formData.password,
-          nombre: formData.firstName,
-          apellido: formData.lastName,
-          telefono: formData.phone,
-          employeeId: formData.employeeId,
-          departamento: formData.department // Agregar el departamento
-        };
+        // Crear objeto usuario sin confirmPassword
+        const { confirmPassword, ...userData } = formData;
         
         const user = await this.authService.register(userData);
         
-        if (user) {
-          await loading.dismiss();
-          this.showToast('Usuario registrado exitosamente', 'success');
-          
-          // Limpiar el formulario
-          this.registerForm.reset();
-          
-          // Navegar al login
-          this.router.navigate(['/login']);
-        }
-      } catch (error: any) {
+        console.log('Registro exitoso:', user);
         await loading.dismiss();
         
-        let errorMessage = 'Error al registrar usuario';
+        // Mostrar mensaje de éxito
+        const alert = await this.alertController.create({
+          header: '¡Registro Exitoso!',
+          message: 'Tu cuenta ha sido creada exitosamente. Puedes iniciar sesión ahora.',
+          buttons: [{
+            text: 'Continuar',
+            handler: () => {
+              this.router.navigate(['/login']);
+            }
+          }]
+        });
+        await alert.present();
         
-        // Manejar errores específicos de Firebase
-        if (error.message) {
-          errorMessage = error.message;
-        }
+      } catch (error) {
+        await loading.dismiss();
+        console.error('Error en registro:', error);
         
-        this.showAlert('Error de Registro', errorMessage);
-        console.error('Registration error:', error);
+        const alert = await this.alertController.create({
+          header: 'Error de Registro',
+          message: (error as Error).message || 'Error al crear la cuenta',
+          buttons: ['Aceptar']
+        });
+        await alert.present();
+      } finally {
+        this.isLoading = false;
       }
     } else {
       // Mostrar errores de validación
-      this.markFormGroupTouched(this.registerForm);
-      this.showToast('Por favor, completa todos los campos correctamente', 'warning');
+      this.markFormGroupTouched();
     }
   }
 
-  // Marcar todos los campos como tocados para mostrar errores
-  private markFormGroupTouched(formGroup: FormGroup) {
-    Object.keys(formGroup.controls).forEach(field => {
-      const control = formGroup.get(field);
-      control?.markAsTouched({ onlySelf: true });
+  private markFormGroupTouched() {
+    Object.keys(this.registerForm.controls).forEach(key => {
+      const control = this.registerForm.get(key);
+      control?.markAsTouched();
     });
-  }
-
-  // Obtener mensaje de error para un campo específico
-  getFieldErrorMessage(fieldName: string): string {
-    const field = this.registerForm.get(fieldName);
-    
-    if (field?.errors && field.touched) {
-      if (field.errors['required']) {
-        return `Este campo es requerido`;
-      }
-      if (field.errors['email']) {
-        return 'Ingresa un correo válido';
-      }
-      if (field.errors['minlength']) {
-        return `Mínimo ${field.errors['minlength'].requiredLength} caracteres`;
-      }
-      if (field.errors['pattern']) {
-        if (fieldName === 'phone') {
-          return 'Ingresa un número válido (8-15 dígitos)';
-        }
-      }
-      if (field.errors['passwordMismatch']) {
-        return 'Las contraseñas no coinciden';
-      }
-    }
-    
-    return '';
-  }
-
-  // Verificar si un campo tiene errores para mostrar estilos
-  hasFieldError(fieldName: string): boolean {
-    const field = this.registerForm.get(fieldName);
-    return !!(field?.errors && field.touched);
-  }
-
-  togglePassword(field: string) {
-    if (field === 'password') {
-      this.showPassword = !this.showPassword;
-    } else {
-      this.showConfirmPassword = !this.showConfirmPassword;
-    }
-  }
-
-  async showAlert(header: string, message: string) {
-    const alert = await this.alertController.create({
-      header,
-      message,
-      buttons: ['OK']
-    });
-    await alert.present();
-  }
-
-  async showToast(message: string, color: string) {
-    const toast = await this.toastController.create({
-      message,
-      duration: 3000,
-      color,
-      position: 'top',
-      buttons: [
-        {
-          text: 'X',
-          role: 'cancel'
-        }
-      ]
-    });
-    await toast.present();
   }
 
   goToLogin() {
     this.router.navigate(['/login']);
   }
+
+  // Getters para validaciones
+  get nombre() { return this.registerForm.get('nombre'); }
+  get apellido() { return this.registerForm.get('apellido'); }
+  get email() { return this.registerForm.get('email'); }
+  get telefono() { return this.registerForm.get('telefono'); }
+  get employeeId() { return this.registerForm.get('employeeId'); }
+  get departamento() { return this.registerForm.get('departamento'); }
+  get password() { return this.registerForm.get('password'); }
+  get confirmPassword() { return this.registerForm.get('confirmPassword'); }
 }

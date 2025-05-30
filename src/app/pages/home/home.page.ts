@@ -1,14 +1,51 @@
+// src/app/pages/home/home.page.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
-import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { 
+  IonContent, 
+  IonHeader, 
+  IonTitle, 
+  IonToolbar,
+  IonButtons,
+  IonButton,
+  IonIcon,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
+  IonItem,
+  IonLabel,
+  IonBadge,
+  IonGrid,
+  IonRow,
+  IonCol,
+  IonText,
+  IonSpinner,
+  IonRefresher,
+  IonRefresherContent,
+  AlertController,
+  LoadingController,
+  ToastController
+} from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { 
+  logOutOutline, 
+  timeOutline, 
+  locationOutline, 
+  cameraOutline,
+  checkmarkCircleOutline,
+  closeCircleOutline,
+  refreshOutline,
+  statsChartOutline,
+  cardOutline,
+  informationCircleOutline
+} from 'ionicons/icons';
+
 import { AuthService } from '../../services/auth.service';
 import { AttendanceService } from '../../services/attendance.service';
-import { GeolocationService } from '../../services/geolocation.service';
-import { CameraService } from '../../services/camera.service';
 import { User } from '../../models/user.model';
 import { Attendance } from '../../models/attendance.model';
 
@@ -17,168 +54,236 @@ import { Attendance } from '../../models/attendance.model';
   templateUrl: './home.page.html',
   styleUrls: ['./home.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule]
+  imports: [
+    CommonModule,
+    FormsModule,
+    IonContent,
+    IonHeader,
+    IonTitle,
+    IonToolbar,
+    IonButtons,
+    IonButton,
+    IonIcon,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardContent,
+    IonItem,
+    IonLabel,
+    IonBadge,
+    IonGrid,
+    IonRow,
+    IonCol,
+    IonText,
+    IonSpinner,
+    IonRefresher,
+    IonRefresherContent
+  ]
 })
 export class HomePage implements OnInit, OnDestroy {
   currentUser: User | null = null;
-  todayAttendance: {entrada?: Attendance, salida?: Attendance} = {};
+  todayAttendances: {entrada?: Attendance, salida?: Attendance} = {};
+  isLoading = false;
   currentTime = new Date();
-  clockInterval: any;
+  
   private subscriptions: Subscription[] = [];
 
   constructor(
     private authService: AuthService,
     private attendanceService: AttendanceService,
-    private geolocationService: GeolocationService,
-    private cameraService: CameraService,
     private router: Router,
     private alertController: AlertController,
     private loadingController: LoadingController,
     private toastController: ToastController
-  ) {}
+  ) {
+    // Registrar iconos
+    addIcons({
+      logOutOutline,
+      timeOutline,
+      locationOutline,
+      cameraOutline,
+      checkmarkCircleOutline,
+      closeCircleOutline,
+      refreshOutline,
+      statsChartOutline,
+      cardOutline,
+      informationCircleOutline
+    });
+  }
 
   ngOnInit() {
     this.loadUserData();
-    this.startClock();
-    this.loadTodayAttendance();
+    this.loadTodayAttendances();
+    this.updateTime();
+    
+    // Actualizar hora cada minuto
+    setInterval(() => {
+      this.updateTime();
+    }, 60000);
   }
 
   ngOnDestroy() {
-    if (this.clockInterval) {
-      clearInterval(this.clockInterval);
-    }
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  startClock() {
-    this.clockInterval = setInterval(() => {
-      this.currentTime = new Date();
-    }, 1000);
+  private loadUserData() {
+    const userSub = this.authService.currentUser.subscribe(user => {
+      this.currentUser = user;
+    });
+    this.subscriptions.push(userSub);
   }
 
-  getGreeting(): string {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Buenos días';
-    if (hour < 18) return 'Buenas tardes';
-    return 'Buenas noches';
-  }
-
-  async loadUserData() {
-    try {
-      this.subscriptions.push(
-        this.authService.currentUser.subscribe(user => {
-          this.currentUser = user;
-          if (user) {
-            this.loadTodayAttendance();
-          }
-        })
-      );
-    } catch (error) {
-      console.error('Error loading user data:', error);
-    }
-  }
-
-  async loadTodayAttendance() {
-    if (this.currentUser) {
-      try {
-        this.subscriptions.push(
-          this.attendanceService.getTodayAttendances().subscribe(data => {
-            this.todayAttendance = data;
-          }, error => {
-            console.error('Error loading attendance:', error);
-          })
-        );
-      } catch (error) {
-        console.error('Error loading attendance:', error);
+  private loadTodayAttendances() {
+    const attendanceSub = this.attendanceService.getTodayAttendances().subscribe(
+      attendances => {
+        this.todayAttendances = attendances;
+        console.log('Asistencias de hoy actualizadas:', attendances);
       }
-    }
+    );
+    this.subscriptions.push(attendanceSub);
   }
 
-  async markAttendance(type: 'entrada' | 'salida') {
+  private updateTime() {
+    this.currentTime = new Date();
+  }
+
+  get canCheckIn(): boolean {
+    return this.attendanceService.canCheckIn();
+  }
+
+  get canCheckOut(): boolean {
+    return this.attendanceService.canCheckOut();
+  }
+
+  get currentTimeString(): string {
+    return this.currentTime.toLocaleTimeString('es-AR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  get currentDateString(): string {
+    return this.currentTime.toLocaleDateString('es-AR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  async registerEntry() {
+    await this.registerAttendance('entrada');
+  }
+
+  async registerExit() {
+    await this.registerAttendance('salida');
+  }
+
+  private async registerAttendance(tipo: 'entrada' | 'salida') {
     const loading = await this.loadingController.create({
-      message: type === 'entrada' ? 'Registrando entrada...' : 'Registrando salida...'
+      message: `Registrando ${tipo}...`,
+      spinner: 'crescent'
     });
     await loading.present();
 
     try {
-      // Registrar asistencia usando el servicio
-      const attendance = await this.attendanceService.registerAttendance(type);
-
+      const attendance = await this.attendanceService.registerAttendance(tipo);
       await loading.dismiss();
-      
-      if (attendance) {
-        this.showToast(
-          type === 'entrada' ? 'Entrada registrada exitosamente' : 'Salida registrada exitosamente',
-          'success'
-        );
-        // No necesitamos llamar loadTodayAttendance ya que el servicio actualiza automáticamente
-      }
-      
+
+      const toast = await this.toastController.create({
+        message: `${tipo === 'entrada' ? 'Entrada' : 'Salida'} registrada exitosamente`,
+        duration: 3000,
+        color: 'success',
+        position: 'top'
+      });
+      await toast.present();
+
+      console.log(`${tipo} registrada:`, attendance);
+
     } catch (error) {
       await loading.dismiss();
-      this.showAlert('Error', error instanceof Error ? error.message : 'No se pudo registrar la asistencia');
-      console.error('Error marking attendance:', error);
+      console.error(`Error registrando ${tipo}:`, error);
+
+      const alert = await this.alertController.create({
+        header: 'Error',
+        message: (error as Error).message || `Error al registrar ${tipo}`,
+        buttons: ['Aceptar']
+      });
+      await alert.present();
     }
   }
 
-  async showConfirmation(type: 'check-in' | 'check-out') {
-    const mappedType = type === 'check-in' ? 'entrada' : 'salida';
-    const alert = await this.alertController.create({
-      header: 'Confirmar',
-      message: `¿Deseas registrar tu ${mappedType}?`,
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Confirmar',
-          handler: () => {
-            this.markAttendance(mappedType);
-          }
-        }
-      ]
-    });
-    await alert.present();
-  }
+  async refreshData(event?: any) {
+    try {
+      await this.attendanceService.forceRefresh();
+      
+      if (event) {
+        event.target.complete();
+      }
 
-  canCheckIn(): boolean {
-    return !this.todayAttendance.entrada;
-  }
+      const toast = await this.toastController.create({
+        message: 'Datos actualizados',
+        duration: 2000,
+        color: 'success'
+      });
+      await toast.present();
 
-  canCheckOut(): boolean {
-    return !!this.todayAttendance.entrada && !this.todayAttendance.salida;
-  }
-
-  async showAlert(header: string, message: string) {
-    const alert = await this.alertController.create({
-      header,
-      message,
-      buttons: ['OK']
-    });
-    await alert.present();
-  }
-
-  async showToast(message: string, color: string) {
-    const toast = await this.toastController.create({
-      message,
-      duration: 2000,
-      color,
-      position: 'top'
-    });
-    await toast.present();
+    } catch (error) {
+      if (event) {
+        event.target.complete();
+      }
+      
+      console.error('Error actualizando datos:', error);
+    }
   }
 
   goToHistory() {
     this.router.navigate(['/history']);
   }
 
-  goToAttendance() {
-    this.router.navigate(['/attendance']);
+  async logout() {
+    const alert = await this.alertController.create({
+      header: 'Cerrar Sesión',
+      message: '¿Estás seguro que deseas cerrar sesión?',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Cerrar Sesión',
+          handler: async () => {
+            try {
+              await this.authService.logout();
+              this.router.navigate(['/login']);
+            } catch (error) {
+              console.error('Error al cerrar sesión:', error);
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
   }
 
-  openMenu() {
-    // Implementar funcionalidad del menú
-    console.log('Menu opened');
+  getAttendanceStatusText(): string {
+    if (this.todayAttendances.entrada && this.todayAttendances.salida) {
+      return 'Jornada Completada';
+    } else if (this.todayAttendances.entrada) {
+      return 'En el Trabajo';
+    } else {
+      return 'Sin Registrar';
+    }
+  }
+
+  getAttendanceStatusColor(): string {
+    if (this.todayAttendances.entrada && this.todayAttendances.salida) {
+      return 'success';
+    } else if (this.todayAttendances.entrada) {
+      return 'warning';
+    } else {
+      return 'medium';
+    }
   }
 }

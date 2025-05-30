@@ -1,11 +1,12 @@
+// src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'home',
-    pathMatch: 'full'
+    redirectTo: '/login',
+    pathMatch: 'full',
   },
   {
     path: 'login',
@@ -27,6 +28,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'home'
+    redirectTo: '/login'
   }
 ];

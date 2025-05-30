@@ -1,46 +1,35 @@
-import { Component, OnInit } from '@angular/core';
-import { Platform, IonicModule } from '@ionic/angular';
-import { SplashScreen } from '@capacitor/splash-screen';
-import { StatusBar } from '@capacitor/status-bar';
+// src/app/app.component.ts
+import { Component } from '@angular/core';
+import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
+import { Platform } from '@ionic/angular';
 import { AuthService } from './services/auth.service';
-import { Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { AttendanceService } from './services/attendance.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
   styleUrls: ['app.component.scss'],
   standalone: true,
-  imports: [CommonModule, IonicModule]
+  imports: [IonApp, IonRouterOutlet]
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   constructor(
     private platform: Platform,
     private authService: AuthService,
-    private router: Router
+    private attendanceService: AttendanceService
   ) {
     this.initializeApp();
   }
 
   async initializeApp() {
     await this.platform.ready();
+    console.log('Plataforma lista');
     
+    // Solicitar permisos al inicializar
     try {
-      await SplashScreen.hide();
-      await StatusBar.setBackgroundColor({ color: '#3880ff' });
+      await this.attendanceService.requestPermissions();
     } catch (error) {
-      console.log('Native plugins not available:', error);
-    }
-  }
-
-  async ngOnInit() {
-    // Verificar si el usuario está autenticado
-    const isAuthenticated = await this.authService.isAuthenticated();
-    
-    if (isAuthenticated) {
-      this.router.navigate(['/home']);
-    } else {
-      this.router.navigate(['/login']);
+      console.warn('No se pudieron obtener todos los permisos:', error);
     }
   }
 }

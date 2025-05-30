@@ -1,70 +1,105 @@
+<!-- src/app/pages/login/login.page.html -->
 <ion-header [translucent]="true">
-  <ion-toolbar color="primary">
+  <ion-toolbar>
     <ion-title>Iniciar Sesión</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="login-content">
+<ion-content [fullscreen]="true" class="ion-padding">
   <div class="login-container">
-    <div class="logo-container">
-      <ion-icon name="business-outline" class="logo-icon"></ion-icon>
-      <h1>Sistema de Asistencia</h1>
-      <p>Bienvenido de vuelta</p>
+    
+    <!-- Logo o título de la app -->
+    <div class="header-section">
+      <ion-text color="primary">
+        <h1>Sistema de Asistencia</h1>
+      </ion-text>
+      <ion-text color="medium">
+        <p>Ingresa tus credenciales para continuar</p>
+      </ion-text>
     </div>
 
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-      <ion-item fill="outline" class="form-item">
-        <ion-label position="floating">Correo Electrónico</ion-label>
-        <ion-input 
-          type="email" 
-          formControlName="email"
-          autocomplete="email"
-          appAutoFocus>
-        </ion-input>
-        <ion-icon name="mail-outline" slot="start"></ion-icon>
-      </ion-item>
-      <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-        <span *ngIf="loginForm.get('email')?.errors?.['required']">El correo es requerido</span>
-        <span *ngIf="loginForm.get('email')?.errors?.['email']">Ingresa un correo válido</span>
-      </div>
+    <!-- Formulario de login -->
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Acceso</ion-card-title>
+        </ion-card-header>
 
-      <ion-item fill="outline" class="form-item">
-        <ion-label position="floating">Contraseña</ion-label>
-        <ion-input 
-          [type]="showPassword ? 'text' : 'password'" 
-          formControlName="password"
-          autocomplete="current-password">
-        </ion-input>
-        <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
-        <ion-button 
-          fill="clear" 
-          slot="end" 
-          (click)="togglePassword()"
-          type="button">
-          <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
-        </ion-button>
-      </ion-item>
-      <div class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-        <span *ngIf="loginForm.get('password')?.errors?.['required']">La contraseña es requerida</span>
-        <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Mínimo 6 caracteres</span>
-      </div>
+        <ion-card-content>
+          <!-- Campo Email -->
+          <ion-item class="input-item">
+            <ion-label position="stacked">Email</ion-label>
+            <ion-input
+              type="email"
+              formControlName="email"
+              placeholder="ejemplo@correo.com"
+              autocomplete="email"
+              [class.ion-invalid]="email?.invalid && email?.touched"
+              [class.ion-valid]="email?.valid && email?.touched">
+            </ion-input>
+            
+            <!-- Mensajes de error para email -->
+            <div class="error-messages" *ngIf="email?.invalid && email?.touched">
+              <ion-text color="danger" *ngIf="email?.errors?.['required']">
+                <small>El email es requerido</small>
+              </ion-text>
+              <ion-text color="danger" *ngIf="email?.errors?.['email']">
+                <small>Ingresa un email válido</small>
+              </ion-text>
+            </div>
+          </ion-item>
 
-      <ion-button 
-        expand="block" 
-        type="submit" 
-        [disabled]="!loginForm.valid"
-        class="login-button">
-        Iniciar Sesión
-        <ion-icon name="log-in-outline" slot="end"></ion-icon>
-      </ion-button>
+          <!-- Campo Contraseña -->
+          <ion-item class="input-item">
+            <ion-label position="stacked">Contraseña</ion-label>
+            <ion-input
+              type="password"
+              formControlName="password"
+              placeholder="Tu contraseña"
+              autocomplete="current-password"
+              [class.ion-invalid]="password?.invalid && password?.touched"
+              [class.ion-valid]="password?.valid && password?.touched">
+            </ion-input>
+            
+            <!-- Mensajes de error para contraseña -->
+            <div class="error-messages" *ngIf="password?.invalid && password?.touched">
+              <ion-text color="danger" *ngIf="password?.errors?.['required']">
+                <small>La contraseña es requerida</small>
+              </ion-text>
+              <ion-text color="danger" *ngIf="password?.errors?.['minlength']">
+                <small>La contraseña debe tener al menos 6 caracteres</small>
+              </ion-text>
+            </div>
+          </ion-item>
+
+          <!-- Botón de login -->
+          <div class="button-section">
+            <ion-button 
+              expand="block" 
+              type="submit" 
+              [disabled]="loginForm.invalid || isLoading"
+              color="primary">
+              <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
+              <span *ngIf="!isLoading">Iniciar Sesión</span>
+              <span *ngIf="isLoading">Iniciando...</span>
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
     </form>
 
-    <div class="register-link">
-      <p>¿No tienes cuenta? 
-        <ion-button fill="clear" (click)="goToRegister()">
-          Regístrate aquí
-        </ion-button>
-      </p>
+    <!-- Enlaces adicionales -->
+    <div class="footer-section">
+      <ion-text color="medium">
+        <p>¿No tienes una cuenta?</p>
+      </ion-text>
+      <ion-button 
+        fill="clear" 
+        color="primary" 
+        (click)="goToRegister()">
+        Registrarse
+      </ion-button>
     </div>
+
   </div>
 </ion-content>
