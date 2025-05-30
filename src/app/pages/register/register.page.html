@@ -1,220 +1,272 @@
 <!-- src/app/pages/register/register.page.html -->
 <ion-header [translucent]="true">
-  <ion-toolbar>
+  <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/login"></ion-back-button>
     </ion-buttons>
-    <ion-title>Registro</ion-title>
+    <ion-title>Registro ITS Cipolletti</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="ion-padding">
+<ion-content [fullscreen]="true" class="register-content">
   <div class="register-container">
     
-    <!-- Header -->
-    <div class="header-section">
-      <ion-text color="primary">
-        <h1>Crear Cuenta</h1>
-      </ion-text>
-      <ion-text color="medium">
-        <p>Completa la información para registrarte</p>
-      </ion-text>
+    <!-- Header mejorado -->
+    <div class="header-container">
+      <div class="icon-container">
+        <ion-icon name="school-outline" class="header-icon"></ion-icon>
+      </div>
+      <h1>Crear Cuenta de Profesor</h1>
+      <p>Completa la información para registrarte en el sistema de asistencias del ITS Cipolletti</p>
     </div>
 
     <!-- Formulario de registro -->
-    <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
-      <ion-card>
-        <ion-card-header>
-          <ion-card-title>Información Personal</ion-card-title>
-        </ion-card-header>
+    <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="register-form">
+      
+      <!-- Información Personal -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <ion-icon name="person-outline"></ion-icon>
+          Información Personal
+        </h3>
 
-        <ion-card-content>
-          <!-- Nombre -->
-          <ion-item class="input-item">
-            <ion-label position="stacked">Nombre *</ion-label>
-            <ion-input
-              type="text"
-              formControlName="nombre"
-              placeholder="Tu nombre"
-              autocomplete="given-name"
-              [class.ion-invalid]="nombre?.invalid && nombre?.touched"
-              [class.ion-valid]="nombre?.valid && nombre?.touched">
-            </ion-input>
-            
-            <div class="error-messages" *ngIf="nombre?.invalid && nombre?.touched">
-              <ion-text color="danger" *ngIf="nombre?.errors?.['required']">
-                <small>El nombre es requerido</small>
-              </ion-text>
-              <ion-text color="danger" *ngIf="nombre?.errors?.['minlength']">
-                <small>El nombre debe tener al menos 2 caracteres</small>
-              </ion-text>
-            </div>
-          </ion-item>
+        <!-- Nombre -->
+        <ion-item class="form-item" [class.item-has-error]="nombre?.invalid && nombre?.touched">
+          <ion-icon name="person-outline" slot="start"></ion-icon>
+          <ion-label position="stacked">Nombre *</ion-label>
+          <ion-input
+            type="text"
+            formControlName="nombre"
+            placeholder="Tu nombre"
+            autocomplete="given-name"
+            [class.ion-invalid]="nombre?.invalid && nombre?.touched"
+            [class.ion-valid]="nombre?.valid && nombre?.touched">
+          </ion-input>
+        </ion-item>
+        
+        <div class="error-message" *ngIf="nombre?.invalid && nombre?.touched">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span *ngIf="nombre?.errors?.['required']">El nombre es requerido</span>
+          <span *ngIf="nombre?.errors?.['minlength']">El nombre debe tener al menos 2 caracteres</span>
+          <span *ngIf="nombre?.errors?.['pattern']">Solo se permiten letras y espacios</span>
+        </div>
 
-          <!-- Apellido -->
-          <ion-item class="input-item">
-            <ion-label position="stacked">Apellido *</ion-label>
-            <ion-input
-              type="text"
-              formControlName="apellido"
-              placeholder="Tu apellido"
-              autocomplete="family-name"
-              [class.ion-invalid]="apellido?.invalid && apellido?.touched"
-              [class.ion-valid]="apellido?.valid && apellido?.touched">
-            </ion-input>
-            
-            <div class="error-messages" *ngIf="apellido?.invalid && apellido?.touched">
-              <ion-text color="danger" *ngIf="apellido?.errors?.['required']">
-                <small>El apellido es requerido</small>
-              </ion-text>
-              <ion-text color="danger" *ngIf="apellido?.errors?.['minlength']">
-                <small>El apellido debe tener al menos 2 caracteres</small>
-              </ion-text>
-            </div>
-          </ion-item>
+        <!-- Apellido -->
+        <ion-item class="form-item" [class.item-has-error]="apellido?.invalid && apellido?.touched">
+          <ion-icon name="person-outline" slot="start"></ion-icon>
+          <ion-label position="stacked">Apellido *</ion-label>
+          <ion-input
+            type="text"
+            formControlName="apellido"
+            placeholder="Tu apellido"
+            autocomplete="family-name"
+            [class.ion-invalid]="apellido?.invalid && apellido?.touched"
+            [class.ion-valid]="apellido?.valid && apellido?.touched">
+          </ion-input>
+        </ion-item>
+        
+        <div class="error-message" *ngIf="apellido?.invalid && apellido?.touched">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span *ngIf="apellido?.errors?.['required']">El apellido es requerido</span>
+          <span *ngIf="apellido?.errors?.['minlength']">El apellido debe tener al menos 2 caracteres</span>
+          <span *ngIf="apellido?.errors?.['pattern']">Solo se permiten letras y espacios</span>
+        </div>
 
-          <!-- Email -->
-          <ion-item class="input-item">
-            <ion-label position="stacked">Email *</ion-label>
-            <ion-input
-              type="email"
-              formControlName="email"
-              placeholder="ejemplo@correo.com"
-              autocomplete="email"
-              [class.ion-invalid]="email?.invalid && email?.touched"
-              [class.ion-valid]="email?.valid && email?.touched">
-            </ion-input>
-            
-            <div class="error-messages" *ngIf="email?.invalid && email?.touched">
-              <ion-text color="danger" *ngIf="email?.errors?.['required']">
-                <small>El email es requerido</small>
-              </ion-text>
-              <ion-text color="danger" *ngIf="email?.errors?.['email']">
-                <small>Ingresa un email válido</small>
-              </ion-text>
-            </div>
-          </ion-item>
+        <!-- Email -->
+        <ion-item class="form-item" [class.item-has-error]="email?.invalid && email?.touched">
+          <ion-icon name="mail-outline" slot="start"></ion-icon>
+          <ion-label position="stacked">Email Institucional *</ion-label>
+          <ion-input
+            type="email"
+            formControlName="email"
+            placeholder="profesor@itscipolletti.edu.ar"
+            autocomplete="email"
+            [class.ion-invalid]="email?.invalid && email?.touched"
+            [class.ion-valid]="email?.valid && email?.touched">
+          </ion-input>
+        </ion-item>
+        
+        <div class="error-message" *ngIf="email?.invalid && email?.touched">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span *ngIf="email?.errors?.['required']">El email es requerido</span>
+          <span *ngIf="email?.errors?.['email']">Ingresa un email válido</span>
+        </div>
 
-          <!-- Teléfono -->
-          <ion-item class="input-item">
-            <ion-label position="stacked">Teléfono</ion-label>
-            <ion-input
-              type="tel"
-              formControlName="telefono"
-              placeholder="+54 9 11 1234-5678"
-              autocomplete="tel">
-            </ion-input>
-            
-            <div class="error-messages" *ngIf="telefono?.invalid && telefono?.touched">
-              <ion-text color="danger" *ngIf="telefono?.errors?.['pattern']">
-                <small>Ingresa un número de teléfono válido</small>
-              </ion-text>
-            </div>
-          </ion-item>
+        <!-- Teléfono -->
+        <ion-item class="form-item">
+          <ion-icon name="call-outline" slot="start"></ion-icon>
+          <ion-label position="stacked">Teléfono</ion-label>
+          <ion-input
+            type="tel"
+            formControlName="telefono"
+            placeholder="+54 299 123-4567"
+            autocomplete="tel">
+          </ion-input>
+        </ion-item>
+        
+        <div class="error-message" *ngIf="telefono?.invalid && telefono?.touched">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span *ngIf="telefono?.errors?.['pattern']">Ingresa un número de teléfono válido</span>
+        </div>
 
-          <!-- ID Empleado -->
-          <ion-item class="input-item">
-            <ion-label position="stacked">ID Empleado</ion-label>
-            <ion-input
-              type="text"
-              formControlName="employeeId"
-              placeholder="Ej: EMP001">
-            </ion-input>
-          </ion-item>
+        <!-- ID Empleado -->
+        <ion-item class="form-item">
+          <ion-icon name="id-card-outline" slot="start"></ion-icon>
+          <ion-label position="stacked">ID Empleado</ion-label>
+          <ion-input
+            type="text"
+            formControlName="employeeId"
+            placeholder="PROF001"
+            style="text-transform: uppercase;">
+          </ion-input>
+        </ion-item>
+        
+        <div class="error-message" *ngIf="employeeId?.invalid && employeeId?.touched">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span *ngIf="employeeId?.errors?.['pattern']">Use solo letras mayúsculas y números</span>
+        </div>
+      </div>
 
-          <!-- Departamento -->
-          <ion-item class="input-item">
-            <ion-label position="stacked">Departamento</ion-label>
-            <ion-select 
-              formControlName="departamento"
-              placeholder="Seleccionar departamento"
-              interface="popover">
-              <ion-select-option value="administracion">Administración</ion-select-option>
-              <ion-select-option value="ventas">Ventas</ion-select-option>
-              <ion-select-option value="marketing">Marketing</ion-select-option>
-              <ion-select-option value="desarrollo">Desarrollo</ion-select-option>
-              <ion-select-option value="recursos-humanos">Recursos Humanos</ion-select-option>
-              <ion-select-option value="contabilidad">Contabilidad</ion-select-option>
-              <ion-select-option value="operaciones">Operaciones</ion-select-option>
-              <ion-select-option value="otro">Otro</ion-select-option>
-            </ion-select>
-          </ion-item>
+      <!-- Información Académica -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <ion-icon name="school-outline"></ion-icon>
+          Información Académica
+        </h3>
 
-          <!-- Contraseña -->
-          <ion-item class="input-item">
-            <ion-label position="stacked">Contraseña *</ion-label>
-            <ion-input
-              type="password"
-              formControlName="password"
-              placeholder="Mínimo 6 caracteres"
-              autocomplete="new-password"
-              [class.ion-invalid]="password?.invalid && password?.touched"
-              [class.ion-valid]="password?.valid && password?.touched">
-            </ion-input>
-            
-            <div class="error-messages" *ngIf="password?.invalid && password?.touched">
-              <ion-text color="danger" *ngIf="password?.errors?.['required']">
-                <small>La contraseña es requerida</small>
-              </ion-text>
-              <ion-text color="danger" *ngIf="password?.errors?.['minlength']">
-                <small>La contraseña debe tener al menos 6 caracteres</small>
-              </ion-text>
-            </div>
-          </ion-item>
+        <!-- Carrera -->
+        <ion-item class="form-item" [class.item-has-error]="carrera?.invalid && carrera?.touched">
+          <ion-icon name="school-outline" slot="start"></ion-icon>
+          <ion-label position="stacked">Carrera *</ion-label>
+          <ion-select 
+            formControlName="carrera"
+            placeholder="Seleccionar carrera"
+            interface="popover">
+            <ion-select-option *ngFor="let c of carreras" [value]="c">
+              {{ c }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+        
+        <div class="error-message" *ngIf="carrera?.invalid && carrera?.touched">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span *ngIf="carrera?.errors?.['required']">Debes seleccionar una carrera</span>
+        </div>
 
-          <!-- Confirmar Contraseña -->
-          <ion-item class="input-item">
-            <ion-label position="stacked">Confirmar Contraseña *</ion-label>
-            <ion-input
-              type="password"
-              formControlName="confirmPassword"
-              placeholder="Repite tu contraseña"
-              autocomplete="new-password"
-              [class.ion-invalid]="confirmPassword?.invalid && confirmPassword?.touched"
-              [class.ion-valid]="confirmPassword?.valid && confirmPassword?.touched">
-            </ion-input>
-            
-            <div class="error-messages" *ngIf="confirmPassword?.invalid && confirmPassword?.touched">
-              <ion-text color="danger" *ngIf="confirmPassword?.errors?.['required']">
-                <small>Confirma tu contraseña</small>
-              </ion-text>
-            </div>
-            
-            <!-- Error de coincidencia de contraseñas -->
-            <div class="error-messages" *ngIf="registerForm.errors?.['passwordMismatch'] && confirmPassword?.touched">
-              <ion-text color="danger">
-                <small>Las contraseñas no coinciden</small>
-              </ion-text>
-            </div>
-          </ion-item>
+        <!-- Materia -->
+        <ion-item class="form-item" [class.item-has-error]="materia?.invalid && materia?.touched" [class.item-disabled]="!carrera?.value">
+          <ion-icon name="book-outline" slot="start"></ion-icon>
+          <ion-label position="stacked">Materia que Dicta *</ion-label>
+          <ion-select 
+            formControlName="materia"
+            placeholder="Primero selecciona una carrera"
+            [disabled]="!carrera?.value"
+            interface="popover">
+            <ion-select-option *ngFor="let m of materiasDisponibles" [value]="m">
+              {{ m }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+        
+        <div class="error-message" *ngIf="materia?.invalid && materia?.touched">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span *ngIf="materia?.errors?.['required']">Debes seleccionar una materia</span>
+        </div>
+      </div>
 
-          <!-- Botón de registro -->
-          <div class="button-section">
-            <ion-button 
-              expand="block" 
-              type="submit" 
-              [disabled]="registerForm.invalid || isLoading"
-              color="primary">
-              <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
-              <span *ngIf="!isLoading">Crear Cuenta</span>
-              <span *ngIf="isLoading">Creando...</span>
-            </ion-button>
-          </div>
-        </ion-card-content>
-      </ion-card>
+      <!-- Información de Seguridad -->
+      <div class="form-section">
+        <h3 class="section-title">
+          <ion-icon name="lock-closed-outline"></ion-icon>
+          Información de Seguridad
+        </h3>
+
+        <!-- Contraseña -->
+        <ion-item class="form-item" [class.item-has-error]="password?.invalid && password?.touched">
+          <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
+          <ion-label position="stacked">Contraseña *</ion-label>
+          <ion-input
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Mínimo 6 caracteres"
+            autocomplete="new-password"
+            [class.ion-invalid]="password?.invalid && password?.touched"
+            [class.ion-valid]="password?.valid && password?.touched">
+          </ion-input>
+          <ion-button 
+            fill="clear" 
+            slot="end" 
+            (click)="togglePasswordVisibility()"
+            class="password-toggle">
+            <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+          </ion-button>
+        </ion-item>
+        
+        <div class="error-message" *ngIf="password?.invalid && password?.touched">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span *ngIf="password?.errors?.['required']">La contraseña es requerida</span>
+          <span *ngIf="password?.errors?.['minlength']">La contraseña debe tener al menos 6 caracteres</span>
+        </div>
+
+        <!-- Confirmar Contraseña -->
+        <ion-item class="form-item" [class.item-has-error]="confirmPassword?.invalid && confirmPassword?.touched">
+          <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
+          <ion-label position="stacked">Confirmar Contraseña *</ion-label>
+          <ion-input
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            formControlName="confirmPassword"
+            placeholder="Repite tu contraseña"
+            autocomplete="new-password"
+            [class.ion-invalid]="confirmPassword?.invalid && confirmPassword?.touched"
+            [class.ion-valid]="confirmPassword?.valid && confirmPassword?.touched">
+          </ion-input>
+          <ion-button 
+            fill="clear" 
+            slot="end" 
+            (click)="toggleConfirmPasswordVisibility()"
+            class="password-toggle">
+            <ion-icon [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+          </ion-button>
+        </ion-item>
+        
+        <div class="error-message" *ngIf="confirmPassword?.invalid && confirmPassword?.touched">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span *ngIf="confirmPassword?.errors?.['required']">Confirma tu contraseña</span>
+        </div>
+        
+        <!-- Error de coincidencia de contraseñas -->
+        <div class="error-message" *ngIf="registerForm.errors?.['passwordMismatch'] && confirmPassword?.touched">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span>Las contraseñas no coinciden</span>
+        </div>
+      </div>
+
+      <!-- Información adicional -->
+      <div class="required-info">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <span>Los campos marcados con (*) son obligatorios</span>
+      </div>
+
+      <!-- Botón de registro -->
+      <ion-button 
+        expand="block" 
+        type="submit" 
+        [disabled]="registerForm.invalid || isLoading"
+        color="primary"
+        class="register-button">
+        <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
+        <span *ngIf="!isLoading">Crear Cuenta</span>
+        <span *ngIf="isLoading">Creando...</span>
+      </ion-button>
     </form>
 
-    <!-- Footer -->
-    <div class="footer-section">
-      <ion-text color="medium">
-        <p>¿Ya tienes una cuenta?</p>
-      </ion-text>
-      <ion-button 
-        fill="clear" 
-        color="primary" 
-        (click)="goToLogin()">
-        Iniciar Sesión
-      </ion-button>
+    <!-- Link para login -->
+    <div class="login-link">
+      <p>¿Ya tienes una cuenta? 
+        <ion-button fill="clear" color="primary" (click)="goToLogin()" class="link-button">
+          Iniciar Sesión
+        </ion-button>
+      </p>
     </div>
 
   </div>

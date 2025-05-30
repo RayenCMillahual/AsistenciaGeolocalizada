@@ -1,4 +1,4 @@
-// Ubicación: app/pages/register/register.page.scss
+// src/app/pages/register/register.page.scss
 
 .register-content {
   --background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
@@ -18,7 +18,7 @@
         width: 80px;
         height: 80px;
         margin: 0 auto 20px;
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -32,14 +32,14 @@
       }
       
       h1 {
-        color: var(--dark-color);
+        color: var(--ion-color-dark);
         font-size: 28px;
         font-weight: 700;
         margin-bottom: 8px;
       }
       
       p {
-        color: var(--medium-color);
+        color: var(--ion-color-medium);
         font-size: 16px;
         margin: 0;
         line-height: 1.4;
@@ -54,44 +54,76 @@
       margin-bottom: 20px;
       flex: 1;
       
+      .form-section {
+        margin-bottom: 32px;
+        
+        .section-title {
+          display: flex;
+          align-items: center;
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--ion-color-dark);
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid var(--ion-color-light);
+          
+          ion-icon {
+            margin-right: 10px;
+            font-size: 20px;
+            color: var(--ion-color-primary);
+          }
+        }
+      }
+      
       .form-item {
         margin-bottom: 8px;
         --border-radius: 12px;
         --border-width: 2px;
         --border-color: #e0e0e0;
-        --border-color-focused: var(--primary-color);
+        --border-color-focused: var(--ion-color-primary);
         transition: all 0.3s ease;
         
         &.item-has-error {
-          --border-color: var(--danger-color);
-          --border-color-focused: var(--danger-color);
+          --border-color: var(--ion-color-danger);
+          --border-color-focused: var(--ion-color-danger);
+        }
+        
+        &.item-disabled {
+          opacity: 0.6;
+          
+          ion-select {
+            --placeholder-color: var(--ion-color-medium);
+          }
         }
         
         ion-icon {
-          color: var(--medium-color);
+          color: var(--ion-color-medium);
           margin-right: 12px;
           font-size: 18px;
         }
         
         ion-label {
           font-weight: 500;
+          font-size: 14px;
         }
         
         ion-input {
           font-size: 16px;
+          --padding-start: 8px;
         }
         
         ion-select {
           font-size: 16px;
+          --padding-start: 8px;
         }
         
         .password-toggle {
-          --color: var(--medium-color);
+          --color: var(--ion-color-medium);
           --padding-start: 8px;
           --padding-end: 8px;
           
           &:hover {
-            --color: var(--primary-color);
+            --color: var(--ion-color-primary);
           }
         }
       }
@@ -99,7 +131,7 @@
       .error-message {
         display: flex;
         align-items: center;
-        color: var(--danger-color);
+        color: var(--ion-color-danger);
         font-size: 12px;
         font-weight: 500;
         margin: 4px 0 12px 16px;
@@ -119,13 +151,13 @@
         margin: 20px 0;
         
         ion-icon {
-          color: var(--primary-color);
+          color: var(--ion-color-primary);
           font-size: 16px;
           margin-right: 8px;
         }
         
         span {
-          color: var(--primary-color);
+          color: var(--ion-color-primary);
           font-size: 13px;
           font-weight: 500;
         }
@@ -144,7 +176,7 @@
           --box-shadow: none;
         }
         
-        &:hover:not([disabled]) {
+        &:not([disabled]):hover {
           transform: translateY(-1px);
           --box-shadow: 0 6px 20px rgba(56, 128, 255, 0.4);
         }
@@ -157,12 +189,12 @@
       padding: 20px 0;
       
       p {
-        color: var(--dark-color);
+        color: var(--ion-color-dark);
         margin: 0;
         font-size: 15px;
         
         .link-button {
-          --color: var(--primary-color);
+          --color: var(--ion-color-primary);
           font-weight: 600;
           text-decoration: underline;
           margin-left: 4px;
@@ -219,6 +251,15 @@
         padding: 24px 20px;
         border-radius: 16px;
         
+        .form-section {
+          margin-bottom: 24px;
+          
+          .section-title {
+            font-size: 16px;
+            margin-bottom: 16px;
+          }
+        }
+        
         .required-info {
           padding: 10px 12px;
           
@@ -247,18 +288,18 @@
 // Animaciones de focus para mejor UX
 ion-item {
   &.item-has-focus {
-    --border-color: var(--primary-color);
+    --border-color: var(--ion-color-primary);
     transform: scale(1.02);
     
     ion-icon {
-      color: var(--primary-color);
+      color: var(--ion-color-primary);
     }
   }
 }
 
 // Mejoras en el select
 ion-select {
-  --placeholder-color: var(--medium-color);
+  --placeholder-color: var(--ion-color-medium);
   --placeholder-opacity: 0.7;
 }
 

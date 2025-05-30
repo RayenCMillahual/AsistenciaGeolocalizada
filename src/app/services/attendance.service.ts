@@ -1,12 +1,11 @@
-// Ubicación: src/app/services/attendance.service.ts
-
+// src/app/services/attendance.service.ts - CORREGIDO
 import { Injectable } from '@angular/core';
 import { DatabaseService } from './database.service';
 import { GeolocationService } from './geolocation.service';
 import { CameraService } from './camera.service';
 import { Attendance } from '../models/attendance.model';
 import { AuthService } from './auth.service';
-import { BehaviorSubject, firstValueFrom, Observable, from } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, Observable, from, Subscription } from 'rxjs';
 import { Platform } from '@ionic/angular';
 import { ValidLocation } from '../models/location.model';
 
@@ -17,6 +16,8 @@ export class AttendanceService {
   private todayAttendances = new BehaviorSubject<{entrada?: Attendance, salida?: Attendance}>({});
   private allAttendances = new BehaviorSubject<Attendance[]>([]);
   private isInitialized = false;
+  private userSubscription?: Subscription;
+  private currentUserId: string | null = null;
 
   constructor(
     private databaseService: DatabaseService,
@@ -32,19 +33,29 @@ export class AttendanceService {
     if (this.isInitialized) return;
 
     try {
-      // Esperar a que la plataforma esté lista
       await this.platform.ready();
-
-      // Escuchar cambios de usuario autenticado
-      this.authService.currentUser.subscribe(async user => {
-        if (user?.id) {
-          console.log('Usuario autenticado, cargando asistencias:', user.id);
-          await this.loadTodayAttendances();
-          await this.loadAllAttendances();
-        } else {
-          // Limpiar datos cuando no hay usuario
-          this.todayAttendances.next({});
-          this.allAttendances.next([]);
+      
+      // SOLUCIÓN: Evitar bucle infinito con suscripción controlada
+      this.userSubscription = this.authService.currentUser.subscribe(async user => {
+        const newUserId = user?.id || null;
+        
+        // Solo actualizar si el usuario realmente cambió
+        if (this.currentUserId !== newUserId) {
+          console.log('Usuario cambió de', this.currentUserId, 'a', newUserId);
+          this.currentUserId = newUserId;
+          
+          if (newUserId) {
+            console.log('Cargando datos para nuevo usuario:', newUserId);
+            // Usar setTimeout para evitar llamadas inmediatas que causen bucle
+            setTimeout(() => {
+              this.loadUserData(newUserId);
+            }, 100);
+          } else {
+            // Limpiar datos cuando no hay usuario
+            this.todayAttendances.next({});
+            this.allAttendances.next([]);
+            console.log('Usuario deslogueado, datos limpiados');
+          }
         }
       });
 
@@ -55,17 +66,29 @@ export class AttendanceService {
     }
   }
 
+  // Método separado para cargar datos del usuario
+  private async loadUserData(userId: string) {
+    try {
+      console.log('=== CARGANDO DATOS DE USUARIO ===', userId);
+      await this.loadTodayAttendances();
+      await this.loadAllAttendances();
+      console.log('=== DATOS CARGADOS EXITOSAMENTE ===');
+    } catch (error) {
+      console.error('Error cargando datos del usuario:', error);
+    }
+  }
+
   // Cargar todas las asistencias del usuario
   private async loadAllAttendances() {
-    const user = this.authService.currentUserValue;
-    if (!user?.id) {
-      console.log('No hay usuario autenticado para cargar asistencias');
+    if (!this.currentUserId) {
+      console.log('No hay usuario para cargar asistencias');
+      this.allAttendances.next([]);
       return;
     }
 
     try {
-      console.log('Cargando todas las asistencias para usuario:', user.id);
-      const attendances = await this.databaseService.getUserAttendances(user.id);
+      console.log('Cargando todas las asistencias para usuario:', this.currentUserId);
+      const attendances = await this.databaseService.getUserAttendances(this.currentUserId);
       console.log('Asistencias cargadas:', attendances.length);
       this.allAttendances.next(attendances);
     } catch (error) {
@@ -76,16 +99,15 @@ export class AttendanceService {
 
   // Cargar las asistencias del día actual
   async loadTodayAttendances() {
-    const user = this.authService.currentUserValue;
-    if (!user?.id) {
-      console.log('No hay usuario autenticado para cargar asistencias de hoy');
+    if (!this.currentUserId) {
+      console.log('No hay usuario para cargar asistencias de hoy');
       this.todayAttendances.next({});
       return;
     }
 
     try {
-      console.log('Cargando asistencias de hoy para usuario:', user.id);
-      const attendances = await this.databaseService.getUserAttendances(user.id);
+      console.log('Cargando asistencias de hoy para usuario:', this.currentUserId);
+      const attendances = await this.databaseService.getUserAttendances(this.currentUserId);
       
       const today = new Date();
       const todayString = this.formatDateString(today);
@@ -95,21 +117,13 @@ export class AttendanceService {
       const todayEntrada = attendances.find(a => {
         const attendanceDate = new Date(a.fecha);
         const attendanceDateString = this.formatDateString(attendanceDate);
-        const isEntrada = a.tipo === 'entrada';
-        const isSameDate = attendanceDateString === todayString;
-        
-        console.log(`Comparando: ${attendanceDateString} === ${todayString}, tipo: ${a.tipo}, match: ${isSameDate && isEntrada}`);
-        
-        return isEntrada && isSameDate;
+        return a.tipo === 'entrada' && attendanceDateString === todayString;
       });
       
       const todaySalida = attendances.find(a => {
         const attendanceDate = new Date(a.fecha);
         const attendanceDateString = this.formatDateString(attendanceDate);
-        const isSalida = a.tipo === 'salida';
-        const isSameDate = attendanceDateString === todayString;
-        
-        return isSalida && isSameDate;
+        return a.tipo === 'salida' && attendanceDateString === todayString;
       });
       
       const todayData = {
@@ -117,7 +131,11 @@ export class AttendanceService {
         salida: todaySalida
       };
       
-      console.log('Asistencias de hoy encontradas:', todayData);
+      console.log('Asistencias de hoy encontradas:', {
+        entrada: !!todayEntrada,
+        salida: !!todaySalida
+      });
+      
       this.todayAttendances.next(todayData);
     } catch (error) {
       console.error('Error loading today attendances:', error);
@@ -146,35 +164,24 @@ export class AttendanceService {
   // Verificar si puede registrar entrada
   canCheckIn(): boolean {
     const today = this.todayAttendances.value;
-    const canCheck = !today.entrada;
-    console.log('¿Puede registrar entrada?', canCheck, 'Estado actual:', today);
-    return canCheck;
+    return !today.entrada;
   }
 
   // Verificar si puede registrar salida
   canCheckOut(): boolean {
     const today = this.todayAttendances.value;
-    const canCheck = !!today.entrada && !today.salida;
-    console.log('¿Puede registrar salida?', canCheck, 'Estado actual:', today);
-    return canCheck;
+    return !!today.entrada && !today.salida;
   }
 
   // Registrar asistencia (entrada o salida)
   async registerAttendance(tipo: 'entrada' | 'salida'): Promise<Attendance> {
-    console.log(`Iniciando registro de ${tipo}`);
+    console.log(`=== REGISTRO DE ${tipo.toUpperCase()} ===`);
     
-    const user = this.authService.currentUserValue;
-    if (!user?.id) {
+    if (!this.currentUserId) {
       throw new Error('Usuario no autenticado');
     }
 
-    console.log('Usuario autenticado:', user.id);
-    
-    // Verificar si ya registró este tipo de asistencia hoy
-    const alreadyRegistered = await this.databaseService.hasUserRegisteredToday(user.id, tipo);
-    if (alreadyRegistered) {
-      throw new Error(`Ya has registrado tu ${tipo} el día de hoy`);
-    }
+    console.log('Usuario:', this.currentUserId);
     
     // Verificar lógica de entrada/salida
     const todayData = this.todayAttendances.value;
@@ -182,193 +189,164 @@ export class AttendanceService {
       throw new Error('Debes registrar tu entrada antes de la salida');
     }
     
+    if (tipo === 'entrada' && todayData.entrada) {
+      throw new Error('Ya has registrado tu entrada hoy');
+    }
+    
+    if (tipo === 'salida' && todayData.salida) {
+      throw new Error('Ya has registrado tu salida hoy');
+    }
+    
     try {
-      // Obtener ubicación (con fallback para web)
-      let position: any = null;
+      // Obtener ubicación con fallback
+      console.log('📍 Obteniendo ubicación...');
+      const position = await this.getLocationWithFallback();
+      console.log('📍 Ubicación obtenida:', position.coords);
+      
+      // Validar ubicación
       let locationValidation: { isValid: boolean; distance: number; location: ValidLocation | null } = { 
         isValid: true, 
         distance: 0, 
         location: null 
       };
-      
       try {
-        console.log('Obteniendo ubicación...');
-        position = await this.getLocationWithFallback();
-        console.log('Ubicación obtenida:', position);
-        
-        if (position?.coords) {
-          locationValidation = await this.geolocationService.isWithinValidLocation(
-            position.coords.latitude,
-            position.coords.longitude
-          );
-          console.log('Validación de ubicación:', locationValidation);
-        }
-      } catch (locationError) {
-        console.warn('Error obteniendo ubicación, continuando con ubicación por defecto:', locationError);
-        // Usar ubicación por defecto para entorno web
-        position = {
-          coords: {
-            latitude: -34.603722, // Buenos Aires por defecto
-            longitude: -58.381592
-          }
-        };
-        locationValidation = { isValid: true, distance: 0, location: null };
+        locationValidation = await this.geolocationService.isWithinValidLocation(
+          position.coords.latitude,
+          position.coords.longitude
+        );
+        console.log('✅ Validación de ubicación:', locationValidation);
+      } catch (error) {
+        console.warn('⚠️ Error validando ubicación:', error);
       }
       
-      // Tomar foto (con fallback para web)
+      // Tomar foto con fallback
+      console.log('📸 Tomando foto...');
       let photoUrl = '';
       try {
-        console.log('Tomando foto...');
         photoUrl = await this.getCameraWithFallback();
-        console.log('Foto tomada:', photoUrl ? 'Sí' : 'No');
+        console.log('📸 Foto:', photoUrl ? 'Capturada' : 'Sin foto');
       } catch (photoError) {
-        console.warn('Error tomando foto, continuando sin foto:', photoError);
-        // Continuar sin foto
-        photoUrl = '';
+        console.warn('⚠️ Error tomando foto:', photoError);
       }
       
       // Crear registro de asistencia
       const now = new Date();
       const attendance: Attendance = {
-        userId: user.id,
+        userId: this.currentUserId,
         tipo: tipo,
         fecha: now,
         hora: this.formatTime(now),
         ubicacion: {
-          latitud: position?.coords?.latitude || -34.603722,
-          longitud: position?.coords?.longitude || -58.381592
+          latitud: position.coords.latitude,
+          longitud: position.coords.longitude
         },
         fotoUrl: photoUrl,
         ubicacionValida: locationValidation.isValid
       };
       
-      console.log('Guardando asistencia:', attendance);
-      
-      // Guardar asistencia en la base de datos
+      console.log('💾 Guardando asistencia...');
       const savedAttendance = await this.databaseService.saveAttendance(attendance);
-      console.log('Asistencia guardada exitosamente:', savedAttendance.id);
+      console.log('✅ Asistencia guardada:', savedAttendance.id);
       
-      // Actualizar las asistencias del día y todas las asistencias
+      // Actualizar datos locales SIN causar bucle infinito
+      console.log('🔄 Actualizando datos locales...');
       await this.loadTodayAttendances();
       await this.loadAllAttendances();
       
+      console.log(`✅ ${tipo.toUpperCase()} REGISTRADA EXITOSAMENTE`);
       return savedAttendance;
+      
     } catch (error) {
-      console.error('Error in registerAttendance:', error);
+      console.error(`❌ Error registrando ${tipo}:`, error);
       throw error;
     }
   }
 
-  // Obtener ubicación con fallback para entorno web
+  // Obtener ubicación con fallback mejorado
   private async getLocationWithFallback(): Promise<any> {
+    // Primero intentar con Capacitor
     try {
-      // Intentar obtener ubicación real
       return await firstValueFrom(this.geolocationService.getCurrentPosition());
-    } catch (error) {
-      console.warn('Geolocation no disponible, usando ubicación por defecto');
-      
-      // Si no funciona, intentar con la API web de geolocalización
-      if (navigator.geolocation) {
-        return new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              resolve({
-                coords: {
-                  latitude: position.coords.latitude,
-                  longitude: position.coords.longitude
-                }
-              });
-            },
-            (error) => {
-              console.warn('Web geolocation también falló:', error);
-              // Usar ubicación por defecto
-              resolve({
-                coords: {
-                  latitude: -34.603722, // Buenos Aires
-                  longitude: -58.381592
-                }
-              });
-            },
-            {
-              timeout: 10000,
-              enableHighAccuracy: false
-            }
-          );
-        });
-      } else {
-        // Navegador no soporta geolocalización
-        return {
-          coords: {
-            latitude: -34.603722,
-            longitude: -58.381592
-          }
-        };
-      }
+    } catch (capacitorError) {
+      console.log('Capacitor geolocation falló, intentando con Web API...');
     }
+
+    // Fallback a Web API
+    if (navigator.geolocation) {
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Timeout obteniendo ubicación'));
+        }, 10000);
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            clearTimeout(timeout);
+            resolve({
+              coords: {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              }
+            });
+          },
+          (error) => {
+            clearTimeout(timeout);
+            console.warn('Web geolocation falló:', error);
+            // Usar ubicación por defecto
+            resolve({
+              coords: {
+                latitude: -38.9516, // Cipolletti, Neuquén
+                longitude: -68.0591
+              }
+            });
+          },
+          {
+            timeout: 8000,
+            enableHighAccuracy: true,
+            maximumAge: 300000 // 5 minutos
+          }
+        );
+      });
+    }
+
+    // Ubicación por defecto si todo falla
+    return {
+      coords: {
+        latitude: -38.9516,
+        longitude: -68.0591
+      }
+    };
   }
 
-  // Obtener foto con fallback para entorno web
+  // Obtener foto con fallback mejorado
   private async getCameraWithFallback(): Promise<string> {
     try {
-      // Intentar usar la cámara de Capacitor
       return await this.cameraService.takePicture();
-    } catch (error) {
-      console.warn('Cámara de Capacitor no disponible, intentando con Web API');
+    } catch (capacitorError) {
+      console.log('Capacitor camera falló, usando Web API...');
       
-      // Si no funciona, intentar con la API web de medios
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          
-          // Crear un canvas para capturar la imagen
-          const video = document.createElement('video');
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          return new Promise((resolve) => {
-            video.srcObject = stream;
-            video.play();
-            
-            video.onloadedmetadata = () => {
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
-              ctx?.drawImage(video, 0, 0);
-              
-              // Detener el stream
-              stream.getTracks().forEach(track => track.stop());
-              
-              // Convertir a base64
-              const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-              resolve(dataUrl);
-            };
-          });
-        } catch (webCameraError) {
-          console.warn('Web camera también falló:', webCameraError);
-          return '';
-        }
-      } else {
-        console.warn('No hay soporte para cámara en este navegador');
-        return '';
-      }
+      // Para web, devolver string vacío por ahora
+      // TODO: Implementar captura web con getUserMedia si es necesario
+      return '';
     }
   }
 
-  // Formatear hora consistentemente
+  // Formatear hora
   private formatTime(date: Date): string {
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
+    return date.toLocaleTimeString('es-AR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
   }
 
-  // Obtener historial de asistencias del usuario actual
+  // Obtener historial de asistencias
   async getUserAttendanceHistory(): Promise<Attendance[]> {
-    const user = this.authService.currentUserValue;
-    if (!user?.id) {
+    if (!this.currentUserId) {
       throw new Error('Usuario no autenticado');
     }
     
     try {
-      const attendances = await this.databaseService.getUserAttendances(user.id);
+      const attendances = await this.databaseService.getUserAttendances(this.currentUserId);
       this.allAttendances.next(attendances);
       return attendances;
     } catch (error) {
@@ -382,7 +360,7 @@ export class AttendanceService {
     return this.allAttendances.asObservable();
   }
 
-  // Método de compatibilidad para home.page.ts
+  // Método de compatibilidad
   async markAttendance(data: {
     userId: string;
     type: 'check-in' | 'check-out';
@@ -394,53 +372,51 @@ export class AttendanceService {
     return this.registerAttendance(tipo);
   }
 
-  // Método de compatibilidad para history.page.ts
+  // Método de compatibilidad para history
   async getAttendanceHistory(userId: string, startDate: Date, endDate: Date): Promise<Attendance[]> {
     const allAttendances = await this.getUserAttendanceHistory();
     
-    // Filtrar por rango de fechas
     return allAttendances.filter(attendance => {
       const attendanceDate = new Date(attendance.fecha);
       return attendanceDate >= startDate && attendanceDate <= endDate;
     });
   }
 
-  // Solicitar permisos necesarios
+  // Solicitar permisos
   async requestPermissions(): Promise<void> {
     try {
-      console.log('Solicitando permisos...');
-      
-      // Intentar solicitar permisos de Capacitor
-      try {
-        await this.geolocationService.requestPermissions();
-        await this.cameraService.requestPermissions();
-        console.log('Permisos de Capacitor obtenidos');
-      } catch (capacitorError) {
-        console.warn('Permisos de Capacitor no disponibles:', capacitorError);
-        
-        // Para entorno web, los permisos se solicitan automáticamente cuando se usan
-        console.log('Ejecutándose en entorno web, permisos se solicitarán cuando sea necesario');
-      }
+      console.log('📱 Solicitando permisos...');
+      await this.geolocationService.requestPermissions();
+      await this.cameraService.requestPermissions();
+      console.log('✅ Permisos obtenidos');
     } catch (error) {
-      console.warn('Error requesting permissions:', error);
-      // No lanzar error, permitir que la app funcione sin todos los permisos
+      console.warn('⚠️ Error con permisos:', error);
     }
   }
 
-  // Método para forzar actualización de datos
+  // Forzar actualización
   async forceRefresh(): Promise<void> {
-    console.log('Forzando actualización de datos...');
-    await this.loadTodayAttendances();
-    await this.loadAllAttendances();
+    console.log('🔄 Forzando actualización...');
+    if (this.currentUserId) {
+      await this.loadTodayAttendances();
+      await this.loadAllAttendances();
+    }
   }
 
-  // Método para debug
+  // Cleanup
+  ngOnDestroy() {
+    if (this.userSubscription) {
+      this.userSubscription.unsubscribe();
+    }
+  }
+
+  // Debug info
   getDebugInfo(): any {
     return {
       isInitialized: this.isInitialized,
+      currentUserId: this.currentUserId,
       todayAttendances: this.todayAttendances.value,
-      allAttendancesCount: this.allAttendances.value.length,
-      currentUser: this.authService.currentUserValue?.id || 'No user'
+      allAttendancesCount: this.allAttendances.value.length
     };
   }
 }

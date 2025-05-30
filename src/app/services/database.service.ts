@@ -1,5 +1,4 @@
-// Ubicación: src/app/services/database.service.ts
-
+// src/app/services/database.service.ts - CORREGIDO
 import { Injectable, inject } from '@angular/core';
 import { 
   Firestore,
@@ -13,7 +12,8 @@ import {
   setDoc,
   getDoc,
   Timestamp,
-  limit
+  limit,
+  connectFirestoreEmulator
 } from '@angular/fire/firestore';
 import { 
   Auth,
@@ -21,7 +21,10 @@ import {
   signInWithEmailAndPassword,
   signOut,
   User as FirebaseUser,
-  onAuthStateChanged
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  connectAuthEmulator
 } from '@angular/fire/auth';
 import { User } from '../models/user.model';
 import { Attendance } from '../models/attendance.model';
@@ -32,62 +35,137 @@ import { BehaviorSubject, Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class DatabaseService {
-  private firestore = inject(Firestore);
+  public firestore = inject(Firestore);
   private auth = inject(Auth);
   
   private _locations = new BehaviorSubject<ValidLocation[]>([]);
   private currentUser: FirebaseUser | null = null;
+  private persistenceConfigured = false;
+  private initializationPromise: Promise<void>;
   
   constructor() {
-    this.init();
+    // Inicialización mejorada y sin llamadas async en constructor
+    this.initializationPromise = this.initialize();
   }
 
-  async init() {
-    console.log('Inicializando DatabaseService...');
-    await this.loadLocations();
-    await this.seedDefaultLocation();
+  private async initialize(): Promise<void> {
+    console.log('🚀 Inicializando DatabaseService...');
     
-    // Escuchar cambios de autenticación
+    try {
+      // 1. Configurar persistencia primero
+      await this.configurePersistence();
+      
+      // 2. Configurar listener de auth
+      this.setupAuthListener();
+      
+      // 3. Cargar ubicaciones con timeout
+      await Promise.race([
+        this.loadLocationsWithFallback(),
+        new Promise(resolve => setTimeout(resolve, 5000)) // timeout 5s
+      ]);
+      
+      console.log('✅ DatabaseService inicializado correctamente');
+    } catch (error) {
+      console.error('❌ Error inicializando DatabaseService:', error);
+      // Continuar con valores por defecto
+      this.setupDefaultData();
+    }
+  }
+
+  private setupAuthListener(): void {
     onAuthStateChanged(this.auth, (user) => {
       this.currentUser = user;
-      console.log('Estado de auth cambió:', user?.uid || 'No user');
+      console.log('🔐 Estado de auth cambió:', user?.uid || 'No user');
     });
+  }
+
+  private async configurePersistence(): Promise<void> {
+    if (this.persistenceConfigured) return;
+    
+    try {
+      await setPersistence(this.auth, browserLocalPersistence);
+      this.persistenceConfigured = true;
+      console.log('✅ Persistencia de Firebase Auth configurada');
+    } catch (error) {
+      console.warn('⚠️ No se pudo configurar persistencia:', error);
+      this.persistenceConfigured = true; // Marcar como configurada para evitar reintentos
+    }
+  }
+
+  private async loadLocationsWithFallback(): Promise<void> {
+    try {
+      await this.loadLocations();
+      await this.seedDefaultLocation();
+    } catch (error) {
+      console.error('❌ Error cargando ubicaciones:', error);
+      this.setupDefaultData();
+    }
+  }
+
+  private setupDefaultData(): void {
+    const defaultLocation: ValidLocation = {
+      id: '1',
+      nombre: 'ITS Cipolletti - Campus Principal',
+      latitud: -38.9516,
+      longitud: -68.0591,
+      radioPermitido: 500
+    };
+    this._locations.next([defaultLocation]);
+    console.log('📍 Ubicación por defecto configurada');
   }
 
   // =====================
   // GESTIÓN DE UBICACIONES
   // =====================
   
-  private async seedDefaultLocation() {
-    const locations = await this.getLocations();
-    if (locations.length === 0) {
-      console.log('Creando ubicación por defecto...');
-      const defaultLocation: ValidLocation = {
-        id: '1',
-        nombre: 'Instituto Superior - Campus Principal',
-        latitud: -34.603722,
-        longitud: -58.381592,
-        radioPermitido: 500 // 500 metros de radio
-      };
-      await this.addLocation(defaultLocation);
+  private async seedDefaultLocation(): Promise<void> {
+    try {
+      const locations = await this.getLocations();
+      if (locations.length === 0) {
+        console.log('📍 Creando ubicación por defecto...');
+        const defaultLocation: ValidLocation = {
+          id: '1',
+          nombre: 'ITS Cipolletti - Campus Principal',
+          latitud: -38.9516,
+          longitud: -68.0591,
+          radioPermitido: 500
+        };
+        await this.addLocation(defaultLocation);
+      }
+    } catch (error) {
+      console.error('❌ Error creando ubicación por defecto:', error);
     }
   }
 
-  async loadLocations() {
+  async loadLocations(): Promise<ValidLocation[]> {
     try {
+      console.log('📍 Cargando ubicaciones desde Firestore...');
       const locationsRef = collection(this.firestore, 'locations');
       const snapshot = await getDocs(locationsRef);
+      
       const locations = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as ValidLocation));
       
       this._locations.next(locations);
-      console.log('Ubicaciones cargadas:', locations.length);
+      console.log('✅ Ubicaciones cargadas:', locations.length);
       return locations;
+      
     } catch (error) {
-      console.error('Error loading locations:', error);
-      return [];
+      console.error('❌ Error loading locations:', error);
+      
+      // Fallback con ubicación por defecto
+      const defaultLocation: ValidLocation = {
+        id: '1',
+        nombre: 'ITS Cipolletti - Campus Principal',
+        latitud: -38.9516,
+        longitud: -68.0591,
+        radioPermitido: 500
+      };
+      
+      this._locations.next([defaultLocation]);
+      return [defaultLocation];
     }
   }
 
@@ -96,6 +174,8 @@ export class DatabaseService {
   }
 
   async getLocations(): Promise<ValidLocation[]> {
+    // Esperar inicialización si aún no está completa
+    await this.initializationPromise;
     return this.loadLocations();
   }
 
@@ -110,49 +190,79 @@ export class DatabaseService {
       }
       
       await this.loadLocations();
-      console.log('Ubicación agregada exitosamente');
+      console.log('✅ Ubicación agregada exitosamente');
+      
     } catch (error) {
-      console.error('Error adding location:', error);
-      throw error;
+      console.error('❌ Error adding location:', error);
+      
+      // Fallback: actualizar solo estado local
+      const currentLocations = this._locations.value;
+      if (!currentLocations.find(l => l.id === location.id)) {
+        if (!location.id) {
+          location.id = Math.random().toString(36).substr(2, 9);
+        }
+        currentLocations.push(location);
+        this._locations.next([...currentLocations]);
+      }
+      
+      console.log('📍 Ubicación agregada solo en memoria');
     }
   }
 
   // =====================
-  // GESTIÓN DE USUARIOS
+  // GESTIÓN DE USUARIOS - MEJORADA
   // =====================
 
   async registerUser(userData: User): Promise<User> {
     try {
-      console.log('Registrando usuario:', userData.email);
+      console.log('👤 Registrando usuario:', userData.email);
+      
+      // Esperar inicialización completa
+      await this.initializationPromise;
+      
+      // Validar datos básicos
+      if (!userData.email || !userData.password) {
+        throw new Error('Email y contraseña son requeridos');
+      }
+
+      if (!userData.nombre || !userData.apellido) {
+        throw new Error('Nombre y apellido son requeridos');
+      }
       
       // Crear usuario en Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         this.auth, 
         userData.email, 
-        userData.password || ''
+        userData.password
       );
       
-      console.log('Usuario creado en Auth:', userCredential.user.uid);
+      console.log('✅ Usuario creado en Auth:', userCredential.user.uid);
       
-      // Guardar datos adicionales en Firestore
+      // Preparar datos para Firestore (sin contraseña)
       const userDoc = {
         email: userData.email,
-        nombre: userData.nombre,
-        apellido: userData.apellido,
-        telefono: userData.telefono || '',
-        employeeId: userData.employeeId || '',
-        departamento: (userData as any).departamento || '',
+        nombre: userData.nombre.trim(),
+        apellido: userData.apellido.trim(),
+        telefono: userData.telefono?.trim() || '',
+        employeeId: userData.employeeId?.trim() || '',
+        carrera: userData.carrera?.trim() || '',
+        materia: userData.materia?.trim() || '',
         fechaCreacion: Timestamp.now(),
         uid: userCredential.user.uid,
         activo: true
       };
       
-      await setDoc(
-        doc(this.firestore, 'users', userCredential.user.uid), 
-        userDoc
-      );
-      
-      console.log('Datos de usuario guardados en Firestore');
+      // Guardar en Firestore con manejo de errores mejorado
+      try {
+        await setDoc(
+          doc(this.firestore, 'users', userCredential.user.uid), 
+          userDoc
+        );
+        console.log('✅ Datos de usuario guardados en Firestore');
+      } catch (firestoreError) {
+        console.warn('⚠️ Error guardando en Firestore:', firestoreError);
+        // El usuario ya está creado en Auth, así que no es un error fatal
+      }
       
       return {
         id: userCredential.user.uid,
@@ -161,82 +271,104 @@ export class DatabaseService {
       } as User;
       
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('❌ Registration error:', error);
       
-      // Manejar errores específicos de Firebase
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          throw new Error('El correo electrónico ya está registrado');
-        case 'auth/weak-password':
-          throw new Error('La contraseña es muy débil. Usa al menos 6 caracteres');
-        case 'auth/invalid-email':
-          throw new Error('El correo electrónico no es válido');
-        case 'auth/operation-not-allowed':
-          throw new Error('El registro está deshabilitado temporalmente');
-        case 'auth/too-many-requests':
-          throw new Error('Demasiados intentos. Intenta más tarde');
-        default:
-          throw new Error('Error al registrar usuario: ' + (error.message || 'Error desconocido'));
-      }
+      // Mapeo de errores mejorado
+      const errorMap: {[key: string]: string} = {
+        'auth/email-already-in-use': 'El correo electrónico ya está registrado',
+        'auth/weak-password': 'La contraseña es muy débil. Usa al menos 6 caracteres',
+        'auth/invalid-email': 'El correo electrónico no es válido',
+        'auth/operation-not-allowed': 'El registro está deshabilitado temporalmente',
+        'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde',
+        'auth/network-request-failed': 'Error de conexión. Verifica tu internet'
+      };
+      
+      const errorMessage = errorMap[error.code] || `Error al registrar usuario: ${error.message}`;
+      throw new Error(errorMessage);
     }
   }
 
   async loginUser(email: string, password: string): Promise<User> {
     try {
-      console.log('Iniciando sesión:', email);
+      console.log('🔐 === INICIO LOGIN ===');
+      console.log('📧 Email:', email);
       
-      const userCredential = await signInWithEmailAndPassword(
-        this.auth, 
-        email, 
-        password
-      );
+      // Esperar inicialización completa
+      await this.initializationPromise;
       
-      console.log('Login exitoso en Auth:', userCredential.user.uid);
-      
-      // Obtener datos adicionales del usuario desde Firestore
-      const userDocRef = doc(this.firestore, 'users', userCredential.user.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        console.log('Datos de usuario obtenidos de Firestore');
-        
-        return {
-          id: userCredential.user.uid,
-          ...userData,
-          fechaCreacion: userData['fechaCreacion']?.toDate() || new Date()
-        } as User;
+      // Validaciones básicas
+      if (!email || !password) {
+        throw new Error('Email y contraseña son requeridos');
+      }
+
+      if (!email.includes('@')) {
+        throw new Error('Formato de email inválido');
       }
       
-      throw new Error('Datos de usuario no encontrados en la base de datos');
+      // Autenticación con Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
+      console.log('✅ Login exitoso en Auth:', userCredential.user.uid);
+      
+      // Obtener datos de usuario de Firestore
+      let userData: any = null;
+      try {
+        const userDocRef = doc(this.firestore, 'users', userCredential.user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          userData = userDoc.data();
+          console.log('✅ Datos obtenidos de Firestore');
+        } else {
+          console.warn('⚠️ Usuario no existe en Firestore');
+        }
+      } catch (firestoreError) {
+        console.warn('⚠️ Error accediendo a Firestore:', firestoreError);
+      }
+      
+      // Construir objeto User
+      const user: User = {
+        id: userCredential.user.uid,
+        email: userData?.email || userCredential.user.email!,
+        nombre: userData?.nombre || userCredential.user.displayName?.split(' ')[0] || 'Usuario',
+        apellido: userData?.apellido || userCredential.user.displayName?.split(' ')[1] || '',
+        telefono: userData?.telefono || '',
+        employeeId: userData?.employeeId || '',
+        carrera: userData?.carrera || '',
+        materia: userData?.materia || userData?.departamento || '', // Compatibilidad
+        fechaCreacion: userData?.fechaCreacion?.toDate() || new Date(),
+        activo: userData?.activo !== false,
+        uid: userCredential.user.uid
+      };
+      
+      console.log('✅ Login completado exitosamente');
+      return user;
       
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        throw new Error('Email o contraseña incorrectos');
-      }
-      if (error.code === 'auth/invalid-email') {
-        throw new Error('El formato del email no es válido');
-      }
-      if (error.code === 'auth/user-disabled') {
-        throw new Error('Esta cuenta ha sido deshabilitada');
-      }
-      if (error.code === 'auth/too-many-requests') {
-        throw new Error('Demasiados intentos fallidos. Intenta más tarde');
-      }
+      // Mapeo de errores mejorado
+      const errorMap: {[key: string]: string} = {
+        'auth/user-not-found': 'Usuario no encontrado',
+        'auth/wrong-password': 'Contraseña incorrecta',
+        'auth/invalid-credential': 'Credenciales inválidas',
+        'auth/invalid-email': 'Formato de email inválido',
+        'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
+        'auth/too-many-requests': 'Demasiados intentos fallidos. Intenta más tarde',
+        'auth/network-request-failed': 'Error de conexión. Verifica tu internet'
+      };
       
-      throw new Error('Error al iniciar sesión: ' + (error.message || 'Error desconocido'));
+      const errorMessage = errorMap[error.code] || `Error al iniciar sesión: ${error.message}`;
+      throw new Error(errorMessage);
     }
   }
 
   async logoutUser(): Promise<void> {
     try {
       await signOut(this.auth);
-      console.log('Sesión cerrada exitosamente');
+      console.log('✅ Sesión cerrada exitosamente');
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-      throw error;
+      console.error('❌ Error al cerrar sesión:', error);
+      throw new Error('Error al cerrar sesión');
     }
   }
 
@@ -245,12 +377,17 @@ export class DatabaseService {
   }
 
   // =====================
-  // GESTIÓN DE ASISTENCIAS
+  // GESTIÓN DE ASISTENCIAS - MEJORADA
   // =====================
 
   async saveAttendance(attendance: Attendance): Promise<Attendance> {
     try {
-      console.log('Guardando asistencia:', attendance);
+      console.log('📝 Guardando asistencia:', attendance);
+      
+      // Validaciones básicas
+      if (!attendance.userId || !attendance.tipo) {
+        throw new Error('Datos de asistencia incompletos');
+      }
       
       const attendanceData = {
         userId: attendance.userId,
@@ -266,7 +403,7 @@ export class DatabaseService {
       const attendancesRef = collection(this.firestore, 'attendances');
       const docRef = await addDoc(attendancesRef, attendanceData);
       
-      console.log('Asistencia guardada con ID:', docRef.id);
+      console.log('✅ Asistencia guardada con ID:', docRef.id);
       
       return {
         ...attendance,
@@ -274,8 +411,8 @@ export class DatabaseService {
       };
       
     } catch (error) {
-      console.error('Error saving attendance:', error);
-      throw new Error('No se pudo guardar la asistencia: ' + (error as Error).message);
+      console.error('❌ Error saving attendance:', error);
+      throw new Error(`No se pudo guardar la asistencia: ${(error as Error).message}`);
     }
   }
 
@@ -283,11 +420,11 @@ export class DatabaseService {
     try {
       const targetUserId = userId || this.currentUser?.uid;
       if (!targetUserId) {
-        console.warn('No hay usuario para obtener asistencias');
+        console.warn('⚠️ No hay usuario para obtener asistencias');
         return [];
       }
       
-      console.log('Obteniendo asistencias para usuario:', targetUserId);
+      console.log('📋 Obteniendo asistencias para usuario:', targetUserId);
       
       const attendancesRef = collection(this.firestore, 'attendances');
       const q = query(
@@ -300,7 +437,7 @@ export class DatabaseService {
       
       const attendances = snapshot.docs.map(doc => {
         const data = doc.data();
-        const attendance = {
+        return {
           id: doc.id,
           userId: data['userId'],
           tipo: data['tipo'],
@@ -310,22 +447,13 @@ export class DatabaseService {
           fotoUrl: data['fotoUrl'] || '',
           ubicacionValida: data['ubicacionValida']
         } as Attendance;
-        
-        console.log('Asistencia procesada:', {
-          id: attendance.id,
-          tipo: attendance.tipo,
-          fecha: attendance.fecha.toISOString(),
-          hora: attendance.hora
-        });
-        
-        return attendance;
       });
       
-      console.log(`Asistencias obtenidas: ${attendances.length} para usuario ${targetUserId}`);
+      console.log(`✅ Asistencias obtenidas: ${attendances.length}`);
       return attendances;
       
     } catch (error) {
-      console.error('Error getting user attendances:', error);
+      console.error('❌ Error getting user attendances:', error);
       return [];
     }
   }
@@ -334,18 +462,13 @@ export class DatabaseService {
     try {
       const targetUserId = userId || this.currentUser?.uid;
       if (!targetUserId) {
-        console.warn('No hay usuario para verificar registro de hoy');
         return false;
       }
       
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      
-      console.log(`Verificando si usuario ${targetUserId} ya registró ${tipo} hoy`);
-      console.log('Rango de fechas:', today.toISOString(), 'a', tomorrow.toISOString());
       
       const attendancesRef = collection(this.firestore, 'attendances');
       const q = query(
@@ -360,23 +483,34 @@ export class DatabaseService {
       const snapshot = await getDocs(q);
       const hasRegistered = !snapshot.empty;
       
-      console.log(`¿Ya registró ${tipo} hoy?`, hasRegistered);
-      
-      if (hasRegistered) {
-        const doc = snapshot.docs[0];
-        const data = doc.data();
-        console.log('Registro existente:', {
-          fecha: data['fecha'].toDate().toISOString(),
-          hora: data['hora'],
-          tipo: data['tipo']
-        });
-      }
-      
+      console.log(`✅ ¿Ya registró ${tipo} hoy?`, hasRegistered);
       return hasRegistered;
       
     } catch (error) {
-      console.error('Error checking today registration:', error);
+      console.error('❌ Error checking today registration:', error);
       return false;
     }
+  }
+
+  // =====================
+  // MÉTODOS DE UTILIDAD
+  // =====================
+
+  async waitForInitialization(): Promise<void> {
+    return this.initializationPromise;
+  }
+
+  isInitialized(): boolean {
+    return this.persistenceConfigured;
+  }
+
+  // Método para obtener información de debugging
+  getServiceStatus(): any {
+    return {
+      initialized: this.isInitialized(),
+      currentUser: this.currentUser?.uid || 'None',
+      persistenceConfigured: this.persistenceConfigured,
+      locationsCount: this._locations.value.length
+    };
   }
 }

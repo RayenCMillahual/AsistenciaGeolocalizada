@@ -22,11 +22,25 @@ import {
   IonButton,
   IonText,
   IonSpinner,
+  IonIcon,
   AlertController,
   LoadingController
 } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { 
+  personOutline, 
+  mailOutline, 
+  callOutline, 
+  idCardOutline,
+  schoolOutline,
+  bookOutline,
+  lockClosedOutline,
+  eyeOutline,
+  eyeOffOutline
+} from 'ionicons/icons';
 
 import { AuthService } from '../../services/auth.service';
+import { User, getAllCarreras, getMateriasByCarrera } from '../../models/user.model';
 
 @Component({
   selector: 'app-register',
@@ -54,12 +68,19 @@ import { AuthService } from '../../services/auth.service';
     IonSelectOption,
     IonButton,
     IonText,
-    IonSpinner
+    IonSpinner,
+    IonIcon
   ]
 })
 export class RegisterPage implements OnInit {
   registerForm!: FormGroup;
   isLoading = false;
+  showPassword = false;
+  showConfirmPassword = false;
+  
+  // Datos para selects
+  carreras = getAllCarreras();
+  materiasDisponibles: string[] = [];
 
   constructor(
     private formBuilder: FormBuilder,
@@ -67,21 +88,54 @@ export class RegisterPage implements OnInit {
     private router: Router,
     private alertController: AlertController,
     private loadingController: LoadingController
-  ) {}
+  ) {
+    // Registrar iconos
+    addIcons({
+      personOutline,
+      mailOutline,
+      callOutline,
+      idCardOutline,
+      schoolOutline,
+      bookOutline,
+      lockClosedOutline,
+      eyeOutline,
+      eyeOffOutline
+    });
+  }
 
   ngOnInit() {
+    this.initializeForm();
+  }
+
+  private initializeForm() {
     this.registerForm = this.formBuilder.group({
-      nombre: ['', [Validators.required, Validators.minLength(2)]],
-      apellido: ['', [Validators.required, Validators.minLength(2)]],
+      nombre: ['', [Validators.required, Validators.minLength(2), Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
+      apellido: ['', [Validators.required, Validators.minLength(2), Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
       email: ['', [Validators.required, Validators.email]],
       telefono: ['', [Validators.pattern(/^[\+]?[0-9\s\-\(\)]+$/)]],
-      employeeId: [''],
-      departamento: [''],
+      employeeId: ['', [Validators.pattern(/^[A-Z0-9]+$/)]],
+      carrera: ['', [Validators.required]],
+      materia: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
     }, {
       validators: this.passwordMatchValidator
     });
+
+    // Escuchar cambios en la carrera para actualizar materias
+    this.registerForm.get('carrera')?.valueChanges.subscribe(carrera => {
+      this.onCarreraChange(carrera);
+    });
+  }
+
+  onCarreraChange(carrera: string) {
+    if (carrera) {
+      this.materiasDisponibles = getMateriasByCarrera(carrera);
+      // Limpiar materia seleccionada cuando cambia la carrera
+      this.registerForm.patchValue({ materia: '' });
+    } else {
+      this.materiasDisponibles = [];
+    }
   }
 
   // Validador personalizado para verificar que las contraseñas coincidan
@@ -94,6 +148,14 @@ export class RegisterPage implements OnInit {
     }
     
     return null;
+  }
+
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility() {
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 
   async onRegister() {
@@ -120,7 +182,7 @@ export class RegisterPage implements OnInit {
         // Mostrar mensaje de éxito
         const alert = await this.alertController.create({
           header: '¡Registro Exitoso!',
-          message: 'Tu cuenta ha sido creada exitosamente. Puedes iniciar sesión ahora.',
+          message: `Tu cuenta ha sido creada exitosamente para la carrera de ${userData.carrera}, materia: ${userData.materia}. Puedes iniciar sesión ahora.`,
           buttons: [{
             text: 'Continuar',
             handler: () => {
@@ -166,7 +228,8 @@ export class RegisterPage implements OnInit {
   get email() { return this.registerForm.get('email'); }
   get telefono() { return this.registerForm.get('telefono'); }
   get employeeId() { return this.registerForm.get('employeeId'); }
-  get departamento() { return this.registerForm.get('departamento'); }
+  get carrera() { return this.registerForm.get('carrera'); }
+  get materia() { return this.registerForm.get('materia'); }
   get password() { return this.registerForm.get('password'); }
   get confirmPassword() { return this.registerForm.get('confirmPassword'); }
 }
