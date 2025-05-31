@@ -1,20 +1,25 @@
 <!-- src/app/pages/home/home.page.html -->
-<ion-header [translucent]="true">
-  <ion-toolbar color="primary">
-    <ion-title>Sistema de Asistencia - ITS Cipolletti</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="refreshData()" fill="clear">
-        <ion-icon name="refresh-outline"></ion-icon>
-      </ion-button>
-      <ion-button (click)="logout()" fill="clear">
-        <ion-icon name="log-out-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
+<app-header 
+  title="Sistema de Asistencia" 
+  subtitle="ITS Cipolletti"
+  [showBackButton]="false"
+  [showMenuButton]="false"
+  [showNotifications]="true"
+  [showSearch]="false"
+  [showRefresh]="true"
+  [showUserMenu]="true"
+  [showHeaderInfo]="true"
+  [connectionStatus]="true"
+  [notificationCount]="0"
+  [isRefreshing]="isLoading"
+  (notificationsClick)="goToNotifications()"
+  (refreshClick)="refreshData($event)"
+  (profileClick)="goToProfile()"
+  (settingsClick)="goToSettings()">
+</app-header>
 
 <ion-content [fullscreen]="true" class="home-content">
-  <!-- Refresher -->
+  <!-- Refresher (mantener para compatibilidad) -->
   <ion-refresher slot="fixed" (ionRefresh)="refreshData($event)">
     <ion-refresher-content
       pullingIcon="refresh-outline"
@@ -26,7 +31,7 @@
 
   <div class="home-container">
     
-    <!-- Header de Bienvenida -->
+    <!-- Header de Bienvenida (sin el toolbar anterior) -->
     <div class="welcome-section">
       <div class="welcome-background">
         <!-- Información del usuario -->
@@ -48,7 +53,7 @@
             </h2>
             
             <div class="employee-info" *ngIf="currentUser?.materia">
-              <ion-icon name="calendarOutline"></ion-icon>
+              <ion-icon name="book-outline"></ion-icon>
               <span>{{ currentUser?.materia }}</span>
             </div>
           </div>
@@ -79,7 +84,7 @@
             Registro del Día
           </h3>
           <ion-badge [color]="getAttendanceStatusColor()" class="status-badge">
-            {{getAttendanceStatusColor() }}
+            {{ getAttendanceStatusColor() }}
           </ion-badge>
         </div>
         
@@ -195,10 +200,56 @@
       </div>
     </div>
 
+    <!-- Accesos Rápidos -->
+    <div class="quick-actions-section">
+      <h3 class="section-title">
+        <ion-icon name="flash-outline"></ion-icon>
+        Accesos Rápidos
+      </h3>
+      
+      <div class="quick-actions-grid">
+        <ion-button 
+          fill="outline" 
+          size="default"
+          class="quick-action-button"
+          (click)="goToHistory()">
+          <ion-icon name="time-outline" slot="start"></ion-icon>
+          Historial
+        </ion-button>
+        
+        <ion-button 
+          fill="outline" 
+          size="default"
+          class="quick-action-button"
+          (click)="goToProfile()">
+          <ion-icon name="person-outline" slot="start"></ion-icon>
+          Mi Perfil
+        </ion-button>
+        
+        <ion-button 
+          fill="outline" 
+          size="default"
+          class="quick-action-button"
+          (click)="goToSettings()">
+          <ion-icon name="settings-outline" slot="start"></ion-icon>
+          Configuración
+        </ion-button>
+        
+        <ion-button 
+          fill="outline" 
+          size="default"
+          class="quick-action-button"
+          (click)="showHelp()">
+          <ion-icon name="help-circle-outline" slot="start"></ion-icon>
+          Ayuda
+        </ion-button>
+      </div>
+    </div>
+
     <!-- Información del Usuario -->
     <div class="user-section" *ngIf="currentUser">
       <h3 class="section-title">
-        <ion-icon name="person-outline"></ion-icon>
+        <ion-icon name="information-circle-outline"></ion-icon>
         Mi Información
       </h3>
       

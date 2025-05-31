@@ -1,19 +1,207 @@
-<ion-toolbar color="primary">
-    <ion-buttons slot="start" *ngIf="showBackButton">
-      <ion-back-button (click)="goBack()"></ion-back-button>
-    </ion-buttons>
+<!-- src/app/shared/header/header.component.html -->
+<ion-header [translucent]="true" class="modern-header">
+  <ion-toolbar class="header-toolbar">
     
-    <ion-buttons slot="start" *ngIf="showMenuButton && !showBackButton">
-      <ion-button (click)="onMenuClick()">
-        <ion-icon slot="icon-only" name="menu-outline"></ion-icon>
+    <!-- Botones de navegación izquierda -->
+    <ion-buttons slot="start" class="nav-buttons">
+      <!-- Botón de retroceso -->
+      <ion-button 
+        *ngIf="showBackButton" 
+        (click)="goBack()" 
+        fill="clear" 
+        class="nav-button back-button">
+        <ion-icon name="chevron-back-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+      
+      <!-- Botón de menú -->
+      <ion-button 
+        *ngIf="showMenuButton && !showBackButton" 
+        (click)="onMenuClick()" 
+        fill="clear" 
+        class="nav-button menu-button">
+        <ion-icon name="menu-outline" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
     
-    <ion-title>{{ title }}</ion-title>
+    <!-- Título con información adicional -->
+    <div class="title-container">
+      <ion-title class="main-title">{{ title }}</ion-title>
+      <div class="subtitle" *ngIf="subtitle">{{ subtitle }}</div>
+      
+      <!-- Breadcrumb opcional -->
+      <div class="breadcrumb" *ngIf="breadcrumb && breadcrumb.length > 0">
+        <span *ngFor="let item of breadcrumb; let last = last" class="breadcrumb-item">
+          <span [class.current]="last">{{ item }}</span>
+          <ion-icon *ngIf="!last" name="chevron-forward-outline" class="breadcrumb-separator"></ion-icon>
+        </span>
+      </div>
+    </div>
     
-    <ion-buttons slot="end">
-      <ion-button (click)="logout()">
-        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+    <!-- Botones de acción derecha -->
+    <ion-buttons slot="end" class="action-buttons">
+      
+      <!-- Botón de notificaciones -->
+      <ion-button 
+        *ngIf="showNotifications" 
+        (click)="onNotificationsClick()" 
+        fill="clear" 
+        class="action-button notifications-button">
+        <ion-icon name="notifications-outline" slot="icon-only"></ion-icon>
+        <ion-badge 
+          *ngIf="notificationCount > 0" 
+          color="danger" 
+          class="notification-badge">
+          {{ notificationCount > 99 ? '99+' : notificationCount }}
+        </ion-badge>
+      </ion-button>
+      
+      <!-- Botón de búsqueda -->
+      <ion-button 
+        *ngIf="showSearch" 
+        (click)="onSearchClick()" 
+        fill="clear" 
+        class="action-button search-button">
+        <ion-icon name="search-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+      
+      <!-- Botón de refrescar -->
+      <ion-button 
+        *ngIf="showRefresh" 
+        (click)="onRefreshClick()" 
+        fill="clear" 
+        class="action-button refresh-button"
+        [class.spinning]="isRefreshingState">
+        <ion-icon name="refresh-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+      
+      <!-- Menú de usuario -->
+      <ion-button 
+        *ngIf="showUserMenu" 
+        (click)="onUserMenuClick($event)" 
+        fill="clear" 
+        class="action-button user-menu-button">
+        <div class="user-avatar">
+          <img 
+            *ngIf="userAvatar" 
+            [src]="userAvatar" 
+            [alt]="userName"
+            class="avatar-image">
+          <ion-icon 
+            *ngIf="!userAvatar" 
+            name="person-outline" 
+            class="avatar-icon"></ion-icon>
+        </div>
+      </ion-button>
+      
+      <!-- Botón de logout simple -->
+      <ion-button 
+        *ngIf="showLogout && !showUserMenu" 
+        (click)="logout()" 
+        fill="clear" 
+        class="action-button logout-button">
+        <ion-icon name="log-out-outline" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
+    
   </ion-toolbar>
+  
+  <!-- Barra de progreso opcional -->
+  <div class="progress-container" *ngIf="showProgress">
+    <ion-progress-bar 
+      [value]="progressValue" 
+      [color]="progressColor"
+      class="header-progress">
+    </ion-progress-bar>
+  </div>
+  
+  <!-- Información adicional -->
+  <div class="header-info" *ngIf="showHeaderInfo">
+    <div class="info-item" *ngIf="currentTime">
+      <ion-icon name="time-outline"></ion-icon>
+      <span>{{ currentTime | date:'HH:mm' }}</span>
+    </div>
+    <div class="info-item" *ngIf="connectionStatus">
+      <ion-icon 
+        [name]="isOnline ? 'wifi-outline' : 'cloud-offline-outline'"
+        [class.online]="isOnline"
+        [class.offline]="!isOnline">
+      </ion-icon>
+      <span>{{ isOnline ? 'En línea' : 'Sin conexión' }}</span>
+    </div>
+  </div>
+  
+</ion-header>
+
+<!-- Popover del menú de usuario -->
+<ion-popover 
+  #userPopover 
+  [isOpen]="isUserMenuOpen" 
+  (didDismiss)="isUserMenuOpen = false"
+  class="user-menu-popover">
+  <ng-template>
+    <div class="user-menu-content">
+      
+      <!-- Información del usuario -->
+      <div class="user-info-section">
+        <div class="user-avatar-large">
+          <img 
+            *ngIf="userAvatar" 
+            [src]="userAvatar" 
+            [alt]="userName"
+            class="avatar-image-large">
+          <ion-icon 
+            *ngIf="!userAvatar" 
+            name="person-outline" 
+            class="avatar-icon-large"></ion-icon>
+        </div>
+        <div class="user-details">
+          <h3 class="user-name">{{ userName || 'Usuario' }}</h3>
+          <p class="user-email">{{ userEmail || 'email@example.com' }}</p>
+          <ion-badge color="success" class="user-status">Activo</ion-badge>
+        </div>
+      </div>
+      
+      <ion-list class="menu-list">
+        <!-- Perfil -->
+        <ion-item 
+          button 
+          (click)="onProfileClick()" 
+          class="menu-item">
+          <ion-icon name="person-outline" slot="start"></ion-icon>
+          <ion-label>Mi Perfil</ion-label>
+        </ion-item>
+        
+        <!-- Configuración -->
+        <ion-item 
+          button 
+          (click)="onSettingsClick()" 
+          class="menu-item">
+          <ion-icon name="settings-outline" slot="start"></ion-icon>
+          <ion-label>Configuración</ion-label>
+        </ion-item>
+        
+        <!-- Ayuda -->
+        <ion-item 
+          button 
+          (click)="onHelpClick()" 
+          class="menu-item">
+          <ion-icon name="help-circle-outline" slot="start"></ion-icon>
+          <ion-label>Ayuda</ion-label>
+        </ion-item>
+        
+        <!-- Divider -->
+        <div class="menu-divider"></div>
+        
+        <!-- Cerrar sesión -->
+        <ion-item 
+          button 
+          (click)="logout()" 
+          class="menu-item logout-item">
+          <ion-icon name="log-out-outline" slot="start"></ion-icon>
+          <ion-label>Cerrar Sesión</ion-label>
+        </ion-item>
+      </ion-list>
+      
+    </div>
+  </ng-template>
+</ion-popover>

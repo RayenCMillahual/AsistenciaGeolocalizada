@@ -1,15 +1,10 @@
-// src/app/pages/register/register.page.ts
+// src/app/pages/register/register.page.ts - ACTUALIZADO CON NUEVO HEADER
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
   IonContent, 
-  IonHeader, 
-  IonTitle, 
-  IonToolbar,
-  IonButtons,
-  IonBackButton,
   IonCard,
   IonCardHeader,
   IonCardTitle,
@@ -36,11 +31,15 @@ import {
   bookOutline,
   lockClosedOutline,
   eyeOutline,
-  eyeOffOutline
+  eyeOffOutline,
+  alertCircleOutline,
+  informationCircleOutline
 } from 'ionicons/icons';
 
 import { AuthService } from '../../services/auth.service';
 import { User, getAllCarreras, getMateriasByCarrera } from '../../models/user.model';
+// Importar el nuevo header
+import { HeaderComponent } from '../../shared/header/header.component';
 
 @Component({
   selector: 'app-register',
@@ -52,11 +51,6 @@ import { User, getAllCarreras, getMateriasByCarrera } from '../../models/user.mo
     FormsModule,
     ReactiveFormsModule,
     IonContent,
-    IonHeader,
-    IonTitle,
-    IonToolbar,
-    IonButtons,
-    IonBackButton,
     IonCard,
     IonCardHeader,
     IonCardTitle,
@@ -69,7 +63,8 @@ import { User, getAllCarreras, getMateriasByCarrera } from '../../models/user.mo
     IonButton,
     IonText,
     IonSpinner,
-    IonIcon
+    IonIcon,
+    HeaderComponent // Importar el header component
   ]
 })
 export class RegisterPage implements OnInit {
@@ -99,7 +94,9 @@ export class RegisterPage implements OnInit {
       bookOutline,
       lockClosedOutline,
       eyeOutline,
-      eyeOffOutline
+      eyeOffOutline,
+      alertCircleOutline,
+      informationCircleOutline
     });
   }
 

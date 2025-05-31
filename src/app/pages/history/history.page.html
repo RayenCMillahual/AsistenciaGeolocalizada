@@ -1,20 +1,23 @@
 <!-- src/app/pages/history/history.page.html -->
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/home"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Historial de Asistencia</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="refreshData()" fill="clear">
-        <ion-icon name="refresh-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
+<app-header 
+  title="Historial de Asistencia" 
+  [breadcrumb]="['Inicio', 'Historial']"
+  [showBackButton]="true"
+  [showMenuButton]="false"
+  [showNotifications]="false"
+  [showSearch]="true"
+  [showRefresh]="true"
+  [showUserMenu]="true"
+  [showProgress]="isLoading"
+  [progressValue]="loadingProgress"
+  [isRefreshing]="isLoading"
+  progressColor="primary"
+  (searchClick)="onSearchAttendances()"
+  (refreshClick)="refreshData($event)">
+</app-header>
 
 <ion-content [fullscreen]="true">
-  <!-- Refresher -->
+  <!-- Refresher (mantener para compatibilidad) -->
   <ion-refresher slot="fixed" (ionRefresh)="refreshData($event)">
     <ion-refresher-content
       pullingIcon="refresh-outline"

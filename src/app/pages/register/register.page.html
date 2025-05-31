@@ -1,12 +1,16 @@
 <!-- src/app/pages/register/register.page.html -->
-<ion-header [translucent]="true">
-  <ion-toolbar color="primary">
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/login"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Registro ITS Cipolletti</ion-title>
-  </ion-toolbar>
-</ion-header>
+<app-header 
+  title="Registro de Profesor" 
+  subtitle="ITS Cipolletti"
+  [showBackButton]="true"
+  [showMenuButton]="false"
+  [showNotifications]="false"
+  [showSearch]="false"
+  [showRefresh]="false"
+  [showUserMenu]="false"
+  [showLogout]="false"
+  [showHeaderInfo]="false">
+</app-header>
 
 <ion-content [fullscreen]="true" class="register-content">
   <div class="register-container">
@@ -167,107 +171,3 @@
             </ion-select-option>
           </ion-select>
         </ion-item>
-        
-        <div class="error-message" *ngIf="materia?.invalid && materia?.touched">
-          <ion-icon name="alert-circle-outline"></ion-icon>
-          <span *ngIf="materia?.errors?.['required']">Debes seleccionar una materia</span>
-        </div>
-      </div>
-
-      <!-- Información de Seguridad -->
-      <div class="form-section">
-        <h3 class="section-title">
-          <ion-icon name="lock-closed-outline"></ion-icon>
-          Información de Seguridad
-        </h3>
-
-        <!-- Contraseña -->
-        <ion-item class="form-item" [class.item-has-error]="password?.invalid && password?.touched">
-          <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
-          <ion-label position="stacked">Contraseña *</ion-label>
-          <ion-input
-            [type]="showPassword ? 'text' : 'password'"
-            formControlName="password"
-            placeholder="Mínimo 6 caracteres"
-            autocomplete="new-password"
-            [class.ion-invalid]="password?.invalid && password?.touched"
-            [class.ion-valid]="password?.valid && password?.touched">
-          </ion-input>
-          <ion-button 
-            fill="clear" 
-            slot="end" 
-            (click)="togglePasswordVisibility()"
-            class="password-toggle">
-            <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
-          </ion-button>
-        </ion-item>
-        
-        <div class="error-message" *ngIf="password?.invalid && password?.touched">
-          <ion-icon name="alert-circle-outline"></ion-icon>
-          <span *ngIf="password?.errors?.['required']">La contraseña es requerida</span>
-          <span *ngIf="password?.errors?.['minlength']">La contraseña debe tener al menos 6 caracteres</span>
-        </div>
-
-        <!-- Confirmar Contraseña -->
-        <ion-item class="form-item" [class.item-has-error]="confirmPassword?.invalid && confirmPassword?.touched">
-          <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
-          <ion-label position="stacked">Confirmar Contraseña *</ion-label>
-          <ion-input
-            [type]="showConfirmPassword ? 'text' : 'password'"
-            formControlName="confirmPassword"
-            placeholder="Repite tu contraseña"
-            autocomplete="new-password"
-            [class.ion-invalid]="confirmPassword?.invalid && confirmPassword?.touched"
-            [class.ion-valid]="confirmPassword?.valid && confirmPassword?.touched">
-          </ion-input>
-          <ion-button 
-            fill="clear" 
-            slot="end" 
-            (click)="toggleConfirmPasswordVisibility()"
-            class="password-toggle">
-            <ion-icon [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
-          </ion-button>
-        </ion-item>
-        
-        <div class="error-message" *ngIf="confirmPassword?.invalid && confirmPassword?.touched">
-          <ion-icon name="alert-circle-outline"></ion-icon>
-          <span *ngIf="confirmPassword?.errors?.['required']">Confirma tu contraseña</span>
-        </div>
-        
-        <!-- Error de coincidencia de contraseñas -->
-        <div class="error-message" *ngIf="registerForm.errors?.['passwordMismatch'] && confirmPassword?.touched">
-          <ion-icon name="alert-circle-outline"></ion-icon>
-          <span>Las contraseñas no coinciden</span>
-        </div>
-      </div>
-
-      <!-- Información adicional -->
-      <div class="required-info">
-        <ion-icon name="information-circle-outline"></ion-icon>
-        <span>Los campos marcados con (*) son obligatorios</span>
-      </div>
-
-      <!-- Botón de registro -->
-      <ion-button 
-        expand="block" 
-        type="submit" 
-        [disabled]="registerForm.invalid || isLoading"
-        color="primary"
-        class="register-button">
-        <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
-        <span *ngIf="!isLoading">Crear Cuenta</span>
-        <span *ngIf="isLoading">Creando...</span>
-      </ion-button>
-    </form>
-
-    <!-- Link para login -->
-    <div class="login-link">
-      <p>¿Ya tienes una cuenta? 
-        <ion-button fill="clear" color="primary" (click)="goToLogin()" class="link-button">
-          Iniciar Sesión
-        </ion-button>
-      </p>
-    </div>
-
-  </div>
-</ion-content>

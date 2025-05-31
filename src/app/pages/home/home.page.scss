@@ -1,7 +1,7 @@
-// src/app/pages/home/home.page.scss
+// src/app/pages/home/home.page.scss - ACTUALIZADO PARA NUEVO HEADER
 
 .home-content {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
 }
 
 .home-container {
@@ -9,11 +9,11 @@
   min-height: 100vh;
 }
 
-// Header de Bienvenida
+// Header de Bienvenida (ya no incluye toolbar)
 .welcome-section {
   .welcome-background {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 40px 20px 30px;
+    padding: 20px 20px 30px; // Reducido padding-top ya que el header está separado
     color: white;
     position: relative;
     
@@ -470,6 +470,51 @@
   }
 }
 
+// Accesos Rápidos (Nueva sección)
+.quick-actions-section {
+  padding: 0 20px 20px;
+  
+  .section-title {
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--ion-color-dark);
+    
+    ion-icon {
+      margin-right: 12px;
+      color: var(--ion-color-primary);
+      font-size: 24px;
+    }
+  }
+  
+  .quick-actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    
+    .quick-action-button {
+      --border-radius: 16px;
+      --padding-start: 16px;
+      --padding-end: 16px;
+      height: 56px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        transform: translateY(-2px);
+        --box-shadow: 0 4px 16px rgba(var(--ion-color-primary-rgb), 0.3);
+      }
+      
+      ion-icon {
+        font-size: 18px;
+        margin-right: 8px;
+      }
+    }
+  }
+}
+
 // Información del Usuario
 .user-section {
   padding: 20px;
@@ -572,6 +617,10 @@
   animation: fadeInUp 1s ease-out;
 }
 
+.quick-actions-section {
+  animation: fadeInUp 1.1s ease-out;
+}
+
 .user-section {
   animation: fadeInUp 1.2s ease-out;
 }
@@ -587,7 +636,7 @@
 // Responsive Design
 @media (max-width: 768px) {
   .welcome-section .welcome-background {
-    padding: 30px 15px 20px;
+    padding: 15px 15px 20px;
     
     .user-info {
       flex-direction: column;
@@ -634,6 +683,7 @@
   
   .status-section,
   .action-section,
+  .quick-actions-section,
   .user-section {
     padding: 15px;
   }
@@ -653,6 +703,20 @@
     
     .action-details h3 {
       font-size: 16px;
+    }
+  }
+  
+  .quick-actions-section .quick-actions-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    
+    .quick-action-button {
+      height: 48px;
+      font-size: 14px;
+      
+      ion-icon {
+        font-size: 16px;
+      }
     }
   }
 }
@@ -682,5 +746,15 @@
     &:hover {
       background: rgba(255, 255, 255, 0.05);
     }
+  }
+}
+
+// Estados especiales para compatibilidad con el header
+.home-content {
+  // Asegurar que el contenido no se superponga con el header
+  --offset-top: 0;
+  
+  &.has-header {
+    --offset-top: 64px;
   }
 }

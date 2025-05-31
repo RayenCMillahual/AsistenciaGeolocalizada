@@ -1,9 +1,16 @@
 <!-- src/app/pages/login/login.page.html -->
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>Iniciar Sesión</ion-title>
-  </ion-toolbar>
-</ion-header>
+<app-header 
+  title="Iniciar Sesión" 
+  subtitle="ITS Cipolletti"
+  [showBackButton]="false"
+  [showMenuButton]="false"
+  [showNotifications]="false"
+  [showSearch]="false"
+  [showRefresh]="false"
+  [showUserMenu]="false"
+  [showLogout]="false"
+  [showHeaderInfo]="false">
+</app-header>
 
 <ion-content [fullscreen]="true" class="ion-padding">
   <div class="login-container">

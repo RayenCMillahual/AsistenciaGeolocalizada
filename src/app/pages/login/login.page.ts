@@ -1,13 +1,10 @@
-// src/app/pages/login/login.page.ts
+// src/app/pages/login/login.page.ts - ACTUALIZADO CON NUEVO HEADER
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
   IonContent, 
-  IonHeader, 
-  IonTitle, 
-  IonToolbar,
   IonCard,
   IonCardHeader,
   IonCardTitle,
@@ -23,6 +20,8 @@ import {
 } from '@ionic/angular/standalone';
 
 import { AuthService } from '../../services/auth.service';
+// Importar el nuevo header
+import { HeaderComponent } from '../../shared/header/header.component';
 
 @Component({
   selector: 'app-login',
@@ -34,9 +33,6 @@ import { AuthService } from '../../services/auth.service';
     FormsModule,
     ReactiveFormsModule,
     IonContent,
-    IonHeader,
-    IonTitle,
-    IonToolbar,
     IonCard,
     IonCardHeader,
     IonCardTitle,
@@ -46,7 +42,8 @@ import { AuthService } from '../../services/auth.service';
     IonInput,
     IonButton,
     IonText,
-    IonSpinner
+    IonSpinner,
+    HeaderComponent // Importar el header component
   ]
 })
 export class LoginPage implements OnInit {

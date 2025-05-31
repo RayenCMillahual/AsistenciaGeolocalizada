@@ -1,16 +1,10 @@
-// src/app/pages/home/home.page.ts - VERSIÓN FINAL
+// src/app/pages/home/home.page.ts - ACTUALIZADO CON NUEVO HEADER
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
 import { 
   IonContent, 
-  IonHeader, 
-  IonTitle, 
-  IonToolbar,
-  IonButtons,
-  IonButton,
-  IonIcon,
   IonCard,
   IonCardContent,
   IonText,
@@ -19,13 +13,14 @@ import {
   IonSpinner,
   IonRefresher,
   IonRefresherContent,
+  IonButton,
+  IonIcon,
   AlertController,
   LoadingController,
   ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
-  logOutOutline, 
   timeOutline, 
   personOutline,
   calendarOutline,
@@ -34,14 +29,21 @@ import {
   logOutOutline as logOutIcon,
   checkmarkCircleOutline,
   alertCircleOutline,
-  refreshOutline,
-  locationOutline
+  locationOutline,
+  bookOutline,
+  flashOutline,
+  informationCircleOutline,
+  settingsOutline,
+  helpCircleOutline
 } from 'ionicons/icons';
 
 import { AuthService } from '../../services/auth.service';
 import { AttendanceService } from '../../services/attendance.service';
 import { User } from '../../models/user.model';
 import { Attendance } from '../../models/attendance.model';
+
+// Importar el nuevo header
+import { HeaderComponent } from '../../shared/header/header.component';
 
 @Component({
   selector: 'app-home',
@@ -51,12 +53,6 @@ import { Attendance } from '../../models/attendance.model';
   imports: [
     CommonModule,
     IonContent,
-    IonHeader,
-    IonTitle,
-    IonToolbar,
-    IonButtons,
-    IonButton,
-    IonIcon,
     IonCard,
     IonCardContent,
     IonText,
@@ -64,7 +60,10 @@ import { Attendance } from '../../models/attendance.model';
     IonBadge,
     IonSpinner,
     IonRefresher,
-    IonRefresherContent
+    IonRefresherContent,
+    IonButton,
+    IonIcon,
+    HeaderComponent // Importar el header component
   ]
 })
 export class HomePage implements OnInit, OnDestroy {
@@ -87,7 +86,6 @@ export class HomePage implements OnInit, OnDestroy {
   ) {
     // Registrar iconos
     addIcons({
-      logOutOutline,
       timeOutline,
       personOutline,
       calendarOutline,
@@ -96,8 +94,12 @@ export class HomePage implements OnInit, OnDestroy {
       logOutIcon,
       checkmarkCircleOutline,
       alertCircleOutline,
-      refreshOutline,
-      locationOutline
+      locationOutline,
+      bookOutline,
+      flashOutline,
+      informationCircleOutline,
+      settingsOutline,
+      helpCircleOutline
     });
   }
 
@@ -300,36 +302,63 @@ export class HomePage implements OnInit, OnDestroy {
     }
   }
 
-  async logout() {
-    const alert = await this.alertController.create({
-      header: 'Cerrar Sesión',
-      message: '¿Estás seguro que deseas cerrar sesión?',
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Cerrar Sesión',
-          handler: async () => {
-            try {
-              await this.authService.logout();
-              this.router.navigate(['/login']);
-              
-              const toast = await this.toastController.create({
-                message: '✅ Sesión cerrada exitosamente',
-                duration: 2000,
-                color: 'success'
-              });
-              await toast.present();
-            } catch (error) {
-              console.error('Error al cerrar sesión:', error);
-            }
-          }
-        }
-      ]
-    });
+  // =====================
+  // MÉTODOS PARA EL NUEVO HEADER
+  // =====================
 
+  goToNotifications() {
+    // TODO: Implementar página de notificaciones
+    this.showNotImplementedToast('Notificaciones');
+  }
+
+  goToProfile() {
+    // TODO: Implementar página de perfil
+    this.showNotImplementedToast('Perfil de Usuario');
+  }
+
+  goToSettings() {
+    // TODO: Implementar página de configuración
+    this.showNotImplementedToast('Configuración');
+  }
+
+  goToHistory() {
+    this.router.navigate(['/history']);
+  }
+
+  async showHelp() {
+    const alert = await this.alertController.create({
+      header: 'Ayuda - Sistema de Asistencia',
+      message: `
+        <strong>¿Cómo usar el sistema?</strong><br><br>
+        
+        <strong>1. Registrar Entrada:</strong><br>
+        • Presiona "Registrar Entrada" al llegar<br>
+        • Asegúrate de estar en el ITS<br>
+        • Permite el acceso a ubicación y cámara<br><br>
+        
+        <strong>2. Registrar Salida:</strong><br>
+        • Presiona "Registrar Salida" al irte<br>
+        • Solo puedes registrar salida después de la entrada<br><br>
+        
+        <strong>3. Ver Historial:</strong><br>
+        • Toca "Historial" para ver tus registros<br>
+        • Puedes filtrar por período<br><br>
+        
+        <strong>¿Problemas?</strong><br>
+        Contacta al administrador del sistema.
+      `,
+      buttons: ['Entendido']
+    });
     await alert.present();
+  }
+
+  private async showNotImplementedToast(feature: string) {
+    const toast = await this.toastController.create({
+      message: `🚧 ${feature} - Próximamente disponible`,
+      duration: 2000,
+      color: 'warning',
+      position: 'top'
+    });
+    await toast.present();
   }
 }
