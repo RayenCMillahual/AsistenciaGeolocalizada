@@ -144,29 +144,35 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<User> {
-    try {
-      console.log('🔐 AuthService: Iniciando login...');
-      
-      // Esperar inicialización si es necesario
-      await this.waitForInitialization();
-      
-      // Validaciones básicas
-      if (!email || !password) {
-        throw new Error('Email y contraseña son requeridos');
-      }
-
-      // Llamar al método de login del DatabaseService
-      const user = await this.databaseService.loginUser(email, password);
-      
-      // El usuario se actualizará automáticamente por onAuthStateChanged
-      console.log('✅ AuthService: Login exitoso');
-      return user;
-      
-    } catch (error) {
-      console.error('❌ AuthService: Error en login:', error);
-      throw error;
-    }
+  try {
+    console.log('🔐 AuthService: Iniciando login...');
+    
+    // Esperar inicialización si es necesario
+    await this.waitForInitialization();
+    
+    // Ejecutar login
+    const user = await this.databaseService.loginUser(email, password);
+    console.log('✅ AuthService: Login exitoso en DatabaseService');
+    
+    // CRÍTICO: Actualizar inmediatamente el BehaviorSubject
+    this.currentUserSubject.next(user);
+    console.log('✅ AuthService: BehaviorSubject actualizado con usuario:', user.email);
+    
+    // SOLUCIÓN ADICIONAL: Forzar emisión del estado
+    setTimeout(() => {
+      console.log('🔄 AuthService: Forzando re-emisión de usuario');
+      this.currentUserSubject.next(user);
+    }, 100);
+    
+    return user;
+    
+  } catch (error) {
+    console.error('❌ AuthService: Error en login:', error);
+    // Asegurar que el estado se limpia en caso de error
+    this.currentUserSubject.next(null);
+    throw error;
   }
+}
 
   async register(userData: User): Promise<User> {
     try {
