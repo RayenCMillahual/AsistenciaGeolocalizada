@@ -5,18 +5,11 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, A
 import { Router } from '@angular/router';
 import { 
   IonContent, 
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
   IonItem,
   IonLabel,
   IonInput,
   IonSelect,
   IonSelectOption,
-  IonButton,
-  IonText,
-  IonSpinner,
   IonIcon,
   AlertController,
   LoadingController
@@ -51,18 +44,11 @@ import { HeaderComponent } from '../../shared/header/header.component';
     FormsModule,
     ReactiveFormsModule,
     IonContent,
-    IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonCardContent,
     IonItem,
     IonLabel,
     IonInput,
     IonSelect,
     IonSelectOption,
-    IonButton,
-    IonText,
-    IonSpinner,
     IonIcon,
     HeaderComponent // Importar el header component
   ]
