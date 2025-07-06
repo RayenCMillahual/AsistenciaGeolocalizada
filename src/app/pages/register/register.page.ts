@@ -26,7 +26,9 @@ import {
   eyeOutline,
   eyeOffOutline,
   alertCircleOutline,
-  informationCircleOutline
+  informationCircleOutline,
+  personAddOutline,
+  logInOutline
 } from 'ionicons/icons';
 
 import { AuthService } from '../../services/auth.service';
@@ -82,7 +84,9 @@ export class RegisterPage implements OnInit {
       eyeOutline,
       eyeOffOutline,
       alertCircleOutline,
-      informationCircleOutline
+      informationCircleOutline,
+      personAddOutline,
+      logInOutline
     });
   }
 

@@ -1,5 +1,7 @@
+// src/app/guards/no-auth.guard.ts
 import { Injectable } from '@angular/core';
 import { CanActivate, Router } from '@angular/router';
+import { Observable, map, tap } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 @Injectable({
@@ -12,14 +14,23 @@ export class NoAuthGuard implements CanActivate {
     private router: Router
   ) {}
 
-  canActivate(): boolean {
-    const isAuthenticated = this.authService.isAuthenticated();
+  canActivate(): Observable<boolean> {
+    console.log('🚫 NoAuthGuard: Verificando si usuario ya está logueado...');
     
-    if (isAuthenticated) {
-      this.router.navigate(['/home']);
-      return false;
-    }
-    
-    return true;
+    return this.authService.currentUser.pipe(
+      tap(user => {
+        console.log('🚫 NoAuthGuard: Usuario actual:', user?.email || 'No user');
+      }),
+      map(user => {
+        if (user) {
+          console.log('🚫 NoAuthGuard: Usuario logueado, redirigiendo a home');
+          this.router.navigate(['/home'], { replaceUrl: true });
+          return false;
+        } else {
+          console.log('✅ NoAuthGuard: Usuario no logueado, permitir acceso');
+          return true;
+        }
+      })
+    );
   }
 }
